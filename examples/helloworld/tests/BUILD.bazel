@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+# gazelle:resolve go github.com/aspect-build/talkie/examples/helloworld //examples/helloworld:helloworld_client
+
+go_test(
+    name = "tests_test",
+    srcs = [
+        "smoke_suite_test.go",
+        "smoke_test.go",
+    ],
+    data = ["//examples/helloworld:helloworld_server"],
+    deps = [
+        "//examples/helloworld:helloworld_client",
+        "//examples/helloworld/protos",
+        "@com_github_onsi_ginkgo_v2//:ginkgo",
+        "@com_github_onsi_gomega//:gomega",
+        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+    ],
+)

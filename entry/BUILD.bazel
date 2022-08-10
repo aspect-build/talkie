@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+exports_files([
+    "client_tmpl",
+    "server_tmpl",
+])
+
+go_library(
+    name = "entry_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/aspect-build/talkie/entry",
+    visibility = ["//visibility:private"],
+    deps = ["//entry/render"],
+)
+
+go_binary(
+    name = "entry",
+    embed = [":entry_lib"],
+    visibility = ["//visibility:public"],
+)
