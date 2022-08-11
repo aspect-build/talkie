@@ -18,7 +18,7 @@ package service
 import (
 	"context"
 
-	"github.com/sirupsen/logrus"
+	"github.com/aspect-build/talkie/logger"
 
 	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
 )
@@ -28,19 +28,19 @@ import (
 // function is part of the Talkie API. Any arguments passed to this function is
 // initialized by the framework and should never be mutated by the service
 // implementation.
-func New(logger *logrus.Logger) *Greeter {
+func New(log logger.Logger) *Greeter {
 	return &Greeter{
-		logger: logger,
+		log: log,
 	}
 }
 
 // Greeter is the service implementation.
 type Greeter struct {
-	logger *logrus.Logger
+	log logger.Logger
 }
 
 // SayHello implements the gRPC method of same name.
 func (s *Greeter) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	s.logger.Printf("Received: %v", in.GetName())
+	s.log.Tracef("Received: %v", in.GetName())
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }

@@ -57,6 +57,7 @@ def talkie(
         name = name + "_server",
         srcs = [server_output],
         deps = [
+            "@aspect_talkie//logger",
             "@com_github_sirupsen_logrus//:logrus",
             "@org_golang_google_grpc//:grpc",
             service_definition,

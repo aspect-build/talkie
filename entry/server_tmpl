@@ -26,6 +26,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	"github.com/aspect-build/talkie/logger"
+
 	pb "{{ .Service.Definition }}"
 	service "{{ .Service.Implementation }}"
 )
@@ -33,7 +35,7 @@ import (
 var addressFlag string
 var logLevelFlag string
 
-var logger *logrus.Logger
+var log logger.Logger
 
 func init() {
 	flag.StringVar(&addressFlag, "address", "0.0.0.0:50051", "The address, including port, to listen.")
@@ -46,32 +48,33 @@ func init() {
 func main() {
 	listener, err := net.Listen("tcp", addressFlag)
 	if err != nil {
-		logger.Fatal(err)
+		log.Fatal(err)
 	}
 	defer listener.Close()
 
 	grpcServer := grpc.NewServer()
 
 {{- range $fn := .Service.RegisterFunctions }}
-	pb.{{$fn}}(grpcServer, service.New(logger))
+	pb.{{$fn}}(grpcServer, service.New(log))
 {{- end}}
 
-	logger.Printf("server listening at %v", listener.Addr())
+	log.Infof("server listening at %v", listener.Addr())
 	if err := grpcServer.Serve(listener); err != nil {
-		logger.Fatal(err)
+		log.Fatal(err)
 	}
 
 	// TODO(f0rmiga): handle graceful shutdowns.
 }
 
 func setupLogging() {
-	logger = logrus.New()
-	logger.Formatter = &logrus.JSONFormatter{}
-	logger.Out = os.Stderr
+	l := logrus.New()
+	l.Formatter = &logrus.JSONFormatter{}
+	l.Out = os.Stderr
 	level, err := logrus.ParseLevel(logLevelFlag)
 	if err != nil {
 		fmt.Printf("ERROR: %v\n", err)
 		os.Exit(1)
 	}
-	logger.Level = level
+	l.Level = level
+	log = l
 }
