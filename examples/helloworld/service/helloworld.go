@@ -23,19 +23,24 @@ import (
 	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
 )
 
-func New(logger *logrus.Logger) *greeter {
-	return &greeter{
+// New is a mandatory function that is called by the Talkie framework to get a
+// gRPC service implementation for the service definition. The signature of this
+// function is part of the Talkie API. Any arguments passed to this function is
+// initialized by the framework and should never be mutated by the service
+// implementation.
+func New(logger *logrus.Logger) *Greeter {
+	return &Greeter{
 		logger: logger,
 	}
 }
 
-type greeter struct {
-	pb.UnimplementedGreeterServer
-
+// Greeter is the service implementation.
+type Greeter struct {
 	logger *logrus.Logger
 }
 
-func (s *greeter) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+// SayHello implements the gRPC method of same name.
+func (s *Greeter) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	s.logger.Printf("Received: %v", in.GetName())
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
