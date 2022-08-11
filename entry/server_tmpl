@@ -30,13 +30,13 @@ import (
 	service "{{ .Service.Implementation }}"
 )
 
-var portFlag int
+var addressFlag string
 var logLevelFlag string
 
 var logger *logrus.Logger
 
 func init() {
-	flag.IntVar(&portFlag, "port", 50051, "The server port.")
+	flag.StringVar(&addressFlag, "address", "0.0.0.0:50051", "The address, including port, to listen.")
 	flag.StringVar(&logLevelFlag, "log-level", "info", "The log level (panic, fatal, error, warn, info, debug, trace).")
 	flag.Parse()
 
@@ -44,7 +44,7 @@ func init() {
 }
 
 func main() {
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", portFlag))
+	listener, err := net.Listen("tcp", addressFlag)
 	if err != nil {
 		logger.Fatal(err)
 	}

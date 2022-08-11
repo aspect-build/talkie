@@ -34,6 +34,8 @@ import (
 var cmd *exec.Cmd
 var port = 50051
 
+var address string
+
 var _ = BeforeSuite(func() {
 	server, err := bazel.Runfile("examples/helloworld/helloworld_server_/helloworld_server")
 	Expect(err).ToNot(HaveOccurred())
@@ -42,7 +44,8 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	port++
-	cmd = exec.Command(server, "-port", fmt.Sprint(port))
+	address = fmt.Sprintf("127.0.0.1:%d", port)
+	cmd = exec.Command(server, "-address", address)
 	err = cmd.Start()
 	Expect(err).ToNot(HaveOccurred())
 })
@@ -57,7 +60,7 @@ var _ = Describe("Helloworld", func() {
 			It("Should reply with a message containing the caller name", func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 				defer cancel()
-				clientConnection, err := client.Connect(ctx, fmt.Sprintf("127.0.0.1:%d", port))
+				clientConnection, err := client.Connect(ctx, address)
 				Expect(err).ToNot(HaveOccurred())
 				defer clientConnection.Close()
 				client := pb.NewGreeterClient(clientConnection)
