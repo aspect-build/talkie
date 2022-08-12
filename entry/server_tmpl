@@ -27,9 +27,10 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/aspect-build/talkie/logger"
+	"github.com/aspect-build/talkie/service"
 
 	pb "{{ .DefinitionPackage }}"
-	service "{{ .ImplementationPackage }}"
+	impl "{{ .ImplementationPackage }}"
 )
 
 var addressFlag string
@@ -46,6 +47,20 @@ func init() {
 }
 
 func main() {
+	// Instantiate all services.
+{{- range $service := .Services }}
+	impl{{ $service.Name }} := impl.New(log)
+	// Ensure {{ $service.Name }} satisfies service.Talkie.
+	var _ service.Talkie = impl{{ $service.Name }}
+{{- end}}
+
+	// Call BeforeStart hooks.
+{{- range $service := .Services }}
+	if err := impl{{ $service.Name }}.BeforeStart(); err != nil {
+		log.Fatal(err)
+	}
+{{- end}}
+
 	listener, err := net.Listen("tcp", addressFlag)
 	if err != nil {
 		log.Fatal(err)
@@ -55,7 +70,6 @@ func main() {
 	grpcServer := grpc.NewServer()
 
 {{- range $service := .Services }}
-	var impl{{ $service.Name }} pb.{{ $service.Name }}Server = service.New(log)
 	pb.Register{{ $service.Name }}Server(grpcServer, impl{{ $service.Name }})
 {{- end}}
 
@@ -63,6 +77,13 @@ func main() {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatal(err)
 	}
+
+	// Call BeforeExit hooks.
+{{- range $service := .Services }}
+	if err := impl{{ $service.Name }}.BeforeExit(); err != nil {
+		log.Fatal(err)
+	}
+{{- end}}
 
 	// TODO(f0rmiga): handle graceful shutdowns.
 }

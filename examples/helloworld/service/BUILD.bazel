@@ -8,5 +8,6 @@ go_library(
     deps = [
         "//examples/helloworld/protos",
         "//logger",
+        "//service",
     ],
 )

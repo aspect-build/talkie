@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = ["service.go"],
+    importpath = "github.com/aspect-build/talkie/service",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "service_test",
+    srcs = ["service_test.go"],
+    deps = [":service"],
+)

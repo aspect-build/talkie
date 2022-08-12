@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"github.com/aspect-build/talkie/logger"
+	"github.com/aspect-build/talkie/service"
 
 	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
 )
@@ -36,7 +37,23 @@ func New(log logger.Logger) *Greeter {
 
 // Greeter is the service implementation.
 type Greeter struct {
+	service.DefaultHooks
+
 	log logger.Logger
+}
+
+// BeforeStart overrides service.Talkie.BeforeStart. This is not a mandatory
+// method, as service.Talkie provides an empty implementation of this.
+func (s *Greeter) BeforeStart() error {
+	s.log.Traceln("Called BeforeStart")
+	return nil
+}
+
+// BeforeExit overrides service.Talkie.BeforeExit. This is not a mandatory
+// method, as service.Talkie provides an empty implementation of this.
+func (s *Greeter) BeforeExit() error {
+	s.log.Traceln("Called BeforeExit")
+	return nil
 }
 
 // SayHello implements the gRPC method of same name.
