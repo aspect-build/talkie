@@ -15,6 +15,8 @@
 
 package service
 
+import "github.com/aspect-build/talkie/logger"
+
 // Talkie represents a Talkie service. It requires extra methods in addition to
 // the ones defined by the Server interface in the .pb.go stubs.
 type Talkie interface {
@@ -34,4 +36,10 @@ func (*DefaultHooks) BeforeStart() error {
 // BeforeExit satisfies Talkie.BeforeExit.
 func (*DefaultHooks) BeforeExit() error {
 	return nil
+}
+
+// Dependencies is the set of mandatory dependencies of a Talkie service. They
+// are initialized by the framework and must be present in all services.
+type Dependencies struct {
+	Log logger.Logger
 }

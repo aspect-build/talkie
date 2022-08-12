@@ -5,6 +5,7 @@ go_library(
     srcs = ["service.go"],
     importpath = "github.com/aspect-build/talkie/service",
     visibility = ["//visibility:public"],
+    deps = ["//logger"],
 )
 
 go_test(

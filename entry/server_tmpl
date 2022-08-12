@@ -48,8 +48,13 @@ func init() {
 
 func main() {
 	// Instantiate all services.
+	serviceDependencies := service.Dependencies{
+		Log: log,
+	}
 {{- range $service := .Services }}
-	impl{{ $service.Name }} := impl.New(log)
+	impl{{ $service.Name }} := &impl.{{ $service.Name }}{
+		Dependencies: serviceDependencies,
+	}
 	// Ensure {{ $service.Name }} satisfies service.Talkie.
 	var _ service.Talkie = impl{{ $service.Name }}
 {{- end}}
