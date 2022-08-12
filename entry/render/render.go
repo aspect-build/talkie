@@ -56,12 +56,12 @@ func (*renderer) Render(
 // Attributes is a set of attributes to be made available to the template being
 // rendered.
 type Attributes struct {
-	Service Service
+	Services              []Service
+	DefinitionPackage     string
+	ImplementationPackage string
 }
 
 // Service is a set of attributes specific to the Talkie service being rendered.
 type Service struct {
-	Definition        string
-	RegisterFunctions []string
-	Implementation    string
+	Name string
 }

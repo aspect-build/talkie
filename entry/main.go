@@ -70,20 +70,18 @@ func main() {
 		log.Fatal(err)
 	}
 	defer serverOutput.Close()
-	var registerFunctions []string
+	services := make([]render.Service, 0)
 	for _, stub := range serviceStubsFlag {
-		rf, err := parse(stub)
+		svcs, err := parse(stub)
 		if err != nil {
 			log.Fatal(err)
 		}
-		registerFunctions = append(registerFunctions, rf...)
+		services = append(services, svcs...)
 	}
 	attrs := render.Attributes{
-		Service: render.Service{
-			Definition:        serviceDefinitionFlag,
-			RegisterFunctions: registerFunctions,
-			Implementation:    serviceImplementationFlag,
-		},
+		Services:              services,
+		DefinitionPackage:     serviceDefinitionFlag,
+		ImplementationPackage: serviceImplementationFlag,
 	}
 	if err := renderer.Render(clientTemplateFlag, clientOutput, attrs); err != nil {
 		log.Fatal(err)
@@ -93,7 +91,7 @@ func main() {
 	}
 }
 
-func parse(stub string) ([]string, error) {
+func parse(stub string) ([]render.Service, error) {
 	fset := token.NewFileSet()
 
 	src, err := os.Open(stub)
@@ -108,15 +106,15 @@ func parse(stub string) ([]string, error) {
 	}
 
 	v := &visitor{
-		registerFunctions: make([]string, 0),
+		services: make([]render.Service, 0),
 	}
 	ast.Walk(v, f)
 
-	return v.registerFunctions, nil
+	return v.services, nil
 }
 
 type visitor struct {
-	registerFunctions []string
+	services []render.Service
 }
 
 func (v *visitor) Visit(n ast.Node) ast.Visitor {
@@ -124,13 +122,13 @@ func (v *visitor) Visit(n ast.Node) ast.Visitor {
 		return nil
 	}
 	switch decl := n.(type) {
-	case *ast.FuncDecl:
-		name := decl.Name.String()
-		if strings.HasPrefix(name, "Register") &&
-			decl.Type.TypeParams == nil &&
-			decl.Type.Results == nil &&
-			decl.Type.Params != nil {
-			v.registerFunctions = append(v.registerFunctions, name)
+	case *ast.TypeSpec:
+		if decl.Name.IsExported() && !strings.HasPrefix(decl.Name.Name, "Unimplemented") && strings.HasSuffix(decl.Name.Name, "Server") {
+			serviceName := strings.TrimSuffix(decl.Name.Name, "Server")
+			service := render.Service{
+				Name: serviceName,
+			}
+			v.services = append(v.services, service)
 		}
 	}
 	return v

@@ -28,8 +28,8 @@ import (
 
 	"github.com/aspect-build/talkie/logger"
 
-	pb "{{ .Service.Definition }}"
-	service "{{ .Service.Implementation }}"
+	pb "{{ .DefinitionPackage }}"
+	service "{{ .ImplementationPackage }}"
 )
 
 var addressFlag string
@@ -54,8 +54,9 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
-{{- range $fn := .Service.RegisterFunctions }}
-	pb.{{$fn}}(grpcServer, service.New(log))
+{{- range $service := .Services }}
+	var impl{{ $service.Name }} pb.{{ $service.Name }}Server = service.New(log)
+	pb.Register{{ $service.Name }}Server(grpcServer, impl{{ $service.Name }})
 {{- end}}
 
 	log.Infof("server listening at %v", listener.Addr())
