@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -78,9 +80,30 @@ func main() {
 	pb.Register{{ $service.Name }}Server(grpcServer, impl{{ $service.Name }})
 {{- end}}
 
-	log.Infof("server listening at %v", listener.Addr())
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatal(err)
+	serveErrors := make(chan error, 1)
+
+	go func() {
+		log.Infof("server listening at %v", listener.Addr())
+		if err := grpcServer.Serve(listener); err != nil {
+			serveErrors <-err
+		}
+		close(serveErrors)
+	}()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	<-sigs
+
+	grpcServer.GracefulStop()
+	log.Infoln("closing server")
+
+	hasErrors := false
+	for err := range serveErrors {
+		// Errors here should not be fatal, the BeforeExit hooks should still
+		// get a chance to run.
+		log.Errorln(err)
+		hasErrors = true
 	}
 
 	// Call BeforeExit hooks.
@@ -90,7 +113,9 @@ func main() {
 	}
 {{- end}}
 
-	// TODO(f0rmiga): handle graceful shutdowns.
+	if hasErrors {
+		os.Exit(1)
+	}
 }
 
 func setupLogging() {
