@@ -28,6 +28,7 @@ import (
 var defaultOptions = []grpc.DialOption{
 	// The connection to the server is a blocking call.
 	grpc.WithBlock(),
+	// TODO(f0rmiga): do proper mTLS.
 	grpc.WithTransportCredentials(insecure.NewCredentials()),
 }
 
