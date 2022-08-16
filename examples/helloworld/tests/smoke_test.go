@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
@@ -36,6 +37,8 @@ var port = 50051
 
 var address string
 
+var stdout, stderr strings.Builder
+
 var _ = BeforeSuite(func() {
 	server, err := bazel.Runfile("examples/helloworld/helloworld_server_/helloworld_server")
 	Expect(err).ToNot(HaveOccurred())
@@ -46,12 +49,24 @@ var _ = BeforeSuite(func() {
 	port++
 	address = fmt.Sprintf("127.0.0.1:%d", port)
 	cmd = exec.Command(server, "-address", address)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 	err = cmd.Start()
 	Expect(err).ToNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {
-	cmd.Process.Kill()
+	err := cmd.Process.Signal(os.Interrupt)
+	Expect(err).ToNot(HaveOccurred())
+
+	err = cmd.Wait()
+	Expect(err).ToNot(HaveOccurred())
+
+	Expect(stdout.String()).To(BeEmpty())
+	stderrStr := stderr.String()
+	Expect(stderrStr).To(ContainSubstring("called BeforeStart"))
+	Expect(stderrStr).To(ContainSubstring("called SayHello"))
+	Expect(stderrStr).To(ContainSubstring("called BeforeExit"))
 })
 
 var _ = Describe("Helloworld", func() {

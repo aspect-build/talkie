@@ -32,19 +32,19 @@ type Greeter struct {
 // BeforeStart overrides service.Talkie.BeforeStart. This is not a mandatory
 // method, as service.Talkie provides an empty implementation of this.
 func (s *Greeter) BeforeStart() error {
-	s.Log.Traceln("Called BeforeStart")
+	s.Log.Infof("called BeforeStart")
 	return nil
 }
 
 // BeforeExit overrides service.Talkie.BeforeExit. This is not a mandatory
 // method, as service.Talkie provides an empty implementation of this.
 func (s *Greeter) BeforeExit() error {
-	s.Log.Traceln("Called BeforeExit")
+	s.Log.Infof("called BeforeExit")
 	return nil
 }
 
 // SayHello implements the gRPC method of same name.
 func (s *Greeter) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	s.Log.Tracef("Received: %v", in.GetName())
+	s.Log.Infof("called SayHello: %v", in.GetName())
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
