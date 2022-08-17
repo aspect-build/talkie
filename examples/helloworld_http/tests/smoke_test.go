@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -75,9 +76,8 @@ var _ = Describe("Helloworld", func() {
 	Describe("Start the server", func() {
 		Context("Perform a simple HTTP call", func() {
 			It("Should reply with a message containing the caller name", func() {
-				// TODO(f0rmiga): create a health check endpoint so we can wait
-				// for this correctly.
-				time.Sleep(time.Second * 3)
+				err := waitForHTTPServer(httpAddress, 50, time.Millisecond*10)
+				Expect(err).ToNot(HaveOccurred())
 				reqData := bytes.NewBufferString(`{"name":"John"}`)
 				resp, err := http.Post(fmt.Sprintf("http://%s/v1/example/say_hello", httpAddress), "application/json", reqData)
 				Expect(err).ToNot(HaveOccurred())
@@ -88,3 +88,15 @@ var _ = Describe("Helloworld", func() {
 		})
 	})
 })
+
+func waitForHTTPServer(addr string, retries int, waitBetweenRetries time.Duration) error {
+	for i := 0; i < retries; i++ {
+		c, err := net.Dial("tcp", addr)
+		if err == nil {
+			c.Close()
+			return nil
+		}
+		time.Sleep(waitBetweenRetries)
+	}
+	return fmt.Errorf("failed to wait for http server: maximum number (%d) of retries reached", retries)
+}
