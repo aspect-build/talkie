@@ -47,6 +47,9 @@ def _entrypoints_impl(ctx):
     args.add("--server_output", ctx.outputs.server_output.path)
     args.add("--service_definition", ctx.attr.service_definition[GoLibrary].importpath)
     args.add("--service_implementation", ctx.attr.service_implementation[GoLibrary].importpath)
+    args.add("--service_client", ctx.attr.service_client)
+    if ctx.attr.enable_grpc_gateway:
+        args.add("--enable_grpc_gateway")
 
     stubs = ctx.attr.service_definition[ProtosInfo].stubs
     args.add_all("--service_stubs", stubs)
@@ -75,6 +78,10 @@ entrypoints = rule(
             mandatory = True,
             providers = [GoLibrary],
         ),
+        "service_client": attr.string(
+            doc = "The importpath from the go_library target.",
+            mandatory = True,
+        ),
         "client_output": attr.output(
             doc = "The generated client output .go file.",
             mandatory = True,
@@ -82,6 +89,10 @@ entrypoints = rule(
         "server_output": attr.output(
             doc = "The generated server output .go file.",
             mandatory = True,
+        ),
+        "enable_grpc_gateway": attr.bool(
+            doc = "If a grpc gateway should be created for this service",
+            mandatory = False,
         ),
         "_client_template": attr.label(
             allow_single_file = True,

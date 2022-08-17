@@ -46,6 +46,8 @@ var serverOutputFlag string
 var serviceDefinitionFlag string
 var serviceStubsFlag stringListFlags
 var serviceImplementationFlag string
+var enableGrpcGatewayFlag bool
+var serviceClientFlag string
 
 func init() {
 	flag.StringVar(&clientTemplateFlag, "client_template", "", "The client input template file.")
@@ -55,6 +57,8 @@ func init() {
 	flag.StringVar(&serviceDefinitionFlag, "service_definition", "", "The go_library for the gRPC service definition.")
 	flag.Var(&serviceStubsFlag, "service_stubs", "The .pb.go files for the gRPC service definition.")
 	flag.StringVar(&serviceImplementationFlag, "service_implementation", "", "The go_library for the gRPC service implementation.")
+	flag.BoolVar(&enableGrpcGatewayFlag, "enable_grpc_gateway", false, "If a grpc gateway should be created for this service.")
+	flag.StringVar(&serviceClientFlag, "service_client", "", "The importpath from the client go_library target.")
 	flag.Parse()
 }
 
@@ -82,6 +86,8 @@ func main() {
 		Services:              services,
 		DefinitionPackage:     serviceDefinitionFlag,
 		ImplementationPackage: serviceImplementationFlag,
+		EnableGrpcGateway:     enableGrpcGatewayFlag,
+		ClientPackage:         serviceClientFlag,
 	}
 	if err := renderer.Render(clientTemplateFlag, clientOutput, attrs); err != nil {
 		log.Fatal(err)

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "service",
+    srcs = ["helloworld_http.go"],
+    importpath = "github.com/aspect-build/talkie/examples/helloworld_http/service",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//examples/helloworld_http/protos",
+        "//service",
+    ],
+)

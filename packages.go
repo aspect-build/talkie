@@ -16,6 +16,7 @@
 package talkie
 
 import (
+	_ "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/sirupsen/logrus"
 	_ "google.golang.org/grpc"
 )

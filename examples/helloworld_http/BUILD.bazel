@@ -1,0 +1,11 @@
+load("//:defs.bzl", "talkie")
+
+# TODO(f0rmiga): the examples should be a separate WORKSPACE.
+talkie(
+    name = "helloworld_http",
+    enable_grpc_gateway = True,
+    importpath = "github.com/aspect-build/talkie/examples/helloworld_http",
+    service_definition = "//examples/helloworld_http/protos",
+    service_implementation = "//examples/helloworld_http/service",
+    visibility = ["//visibility:public"],
+)

@@ -16,8 +16,10 @@
 package smoke_test
 
 import (
-	"context"
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
@@ -27,28 +29,28 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	client "github.com/aspect-build/talkie/examples/helloworld"
-	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
 )
 
 var cmd *exec.Cmd
-var port = 50051
+var port = 60051
 
-var address string
+var grpcAddress string
+var httpAddress string
 
 var stdout, stderr strings.Builder
 
 var _ = BeforeSuite(func() {
-	server, err := bazel.Runfile("examples/helloworld/helloworld_server_/helloworld_server")
+	server, err := bazel.Runfile("examples/helloworld_http/helloworld_http_server_/helloworld_http_server")
 	Expect(err).ToNot(HaveOccurred())
 
 	_, err = os.Stat(server)
 	Expect(err).ToNot(HaveOccurred())
 
 	port++
-	address = fmt.Sprintf("127.0.0.1:%d", port)
-	cmd = exec.Command(server, "-grpc-address", address)
+	grpcAddress = fmt.Sprintf("127.0.0.1:%d", port)
+	port++
+	httpAddress = fmt.Sprintf("127.0.0.1:%d", port)
+	cmd = exec.Command(server, "-grpc-address", grpcAddress, "-http-address", httpAddress)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err = cmd.Start()
@@ -71,17 +73,17 @@ var _ = AfterSuite(func() {
 
 var _ = Describe("Helloworld", func() {
 	Describe("Start the server", func() {
-		Context("Perform a simple call", func() {
+		Context("Perform a simple HTTP call", func() {
 			It("Should reply with a message containing the caller name", func() {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-				defer cancel()
-				clientConnection, err := client.Connect(ctx, address)
+				// TODO(f0rmiga): create a health check endpoint so we can wait
+				// for this correctly.
+				time.Sleep(time.Second * 3)
+				reqData := bytes.NewBufferString(`{"name":"John"}`)
+				resp, err := http.Post(fmt.Sprintf("http://%s/v1/example/say_hello", httpAddress), "application/json", reqData)
 				Expect(err).ToNot(HaveOccurred())
-				defer clientConnection.Close()
-				client := pb.NewGreeterClient(clientConnection)
-				reply, err := client.SayHello(ctx, &pb.HelloRequest{Name: "John"})
+				respBody, err := ioutil.ReadAll(resp.Body)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(reply.GetMessage()).To(Equal("Hello John"))
+				Expect(string(respBody)).To(Equal(`{"message":"Hello John"}`))
 			})
 		})
 	})

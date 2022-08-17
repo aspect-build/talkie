@@ -13,16 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package smoke_test
+syntax = "proto3";
 
-import (
-	"testing"
+package helloworld;
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-)
+import "google/api/annotations.proto";
 
-func TestHelloworld(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Helloworld gRPC Suite")
+option go_package = "github.com/aspect-build/talkie/examples/helloworld_http/protos";
+
+service Greeter {
+  rpc SayHello (HelloRequest) returns (HelloReply) {
+    option (google.api.http) = {
+      post: "/v1/example/say_hello"
+      body: "*"
+    };
+  }
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
 }

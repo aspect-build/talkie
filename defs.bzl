@@ -26,6 +26,7 @@ def talkie(
     service_implementation,
     visibility = None,
     tags = [],
+    enable_grpc_gateway = False,
     **kwargs
 ):
     """Wraps all the Talkie targets.
@@ -46,12 +47,25 @@ def talkie(
     entrypoints(
         name = name + "_entrypoints",
         client_output = client_output,
+        enable_grpc_gateway = enable_grpc_gateway,
         server_output = server_output,
         service_definition = service_definition,
         service_implementation = service_implementation,
+        service_client = importpath,
         tags = tags,
         visibility = ["//visibility:private"],
     )
+
+    deps = []
+
+    if enable_grpc_gateway:
+        deps.extend(
+            [
+                "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
+                "@org_golang_google_grpc//credentials/insecure",
+                ":{}_client".format(name),
+            ]
+        )
 
     go_binary(
         name = name + "_server",
@@ -63,7 +77,7 @@ def talkie(
             "@org_golang_google_grpc//:grpc",
             service_definition,
             service_implementation,
-        ],
+        ] + deps,
         tags = tags,
         visibility = visibility,
         **kwargs

@@ -24,5 +24,5 @@ import (
 
 func TestHelloworld(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Helloworld gRPC Suite")
+	RunSpecs(t, "Helloworld gRPC Gateway Suite")
 }

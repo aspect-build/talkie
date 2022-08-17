@@ -18,6 +18,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net"
@@ -28,6 +29,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
+	{{- if .EnableGrpcGateway }}
+	"errors"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"net/http"
+	client "{{ .ClientPackage }}"
+	{{- end }}
+
 	"github.com/aspect-build/talkie/logger"
 	"github.com/aspect-build/talkie/service"
 
@@ -35,20 +43,27 @@ import (
 	impl "{{ .ImplementationPackage }}"
 )
 
-var addressFlag string
+var grpcAddressFlag string
 var logLevelFlag string
+var httpAddressFlag string
 
 var log logger.Logger
 
 func init() {
-	flag.StringVar(&addressFlag, "address", "0.0.0.0:50051", "The address, including port, to listen.")
+	flag.StringVar(&grpcAddressFlag, "grpc-address", "0.0.0.0:50051", "The address for the gRPC server, including port, to listen.")
 	flag.StringVar(&logLevelFlag, "log-level", "info", "The log level (panic, fatal, error, warn, info, debug, trace).")
+	flag.StringVar(&httpAddressFlag, "http-address", "0.0.0.0:8090", "The address for the HTTP server, including port, to listen. Only used if --enable_grpc_gateway is set to true.")
 	flag.Parse()
 
 	setupLogging()
 }
 
 func main() {
+	ctx := context.Background()
+	_ = ctx
+
+	hasErrors := false
+
 	// Instantiate all services.
 	serviceDependencies := service.Dependencies{
 		Log: log,
@@ -68,7 +83,20 @@ func main() {
 	}
 {{- end}}
 
-	listener, err := net.Listen("tcp", addressFlag)
+	// Defer the call to BeforeExit hooks.
+	defer func(){
+{{- range $service := .Services }}
+		if err := impl{{ $service.Name }}.BeforeExit(); err != nil {
+			log.Errorln(err)
+			hasErrors = true
+		}
+{{- end}}
+		if hasErrors {
+			os.Exit(1)
+		}
+	}()
+
+	listener, err := net.Listen("tcp", grpcAddressFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,39 +111,70 @@ func main() {
 	serveErrors := make(chan error, 1)
 
 	go func() {
-		log.Infof("server listening at %v", listener.Addr())
+		log.Infof("grpc server listening at %v", listener.Addr())
 		if err := grpcServer.Serve(listener); err != nil {
 			serveErrors <-err
 		}
 		close(serveErrors)
 	}()
 
+{{- if .EnableGrpcGateway }}
+	clientConnection, err := client.Connect(ctx, grpcAddressFlag)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gatewayMux := runtime.NewServeMux()
+	{{- range $service := .Services }}
+	if err := pb.Register{{ $service.Name }}Handler(ctx, gatewayMux, clientConnection); err != nil {
+		log.Fatal(err)
+	}
+	{{- end}}
+
+	gatewayServer := &http.Server{
+		Addr: httpAddressFlag,
+		Handler: gatewayMux,
+	}
+
+	grpcGatewayServeErrors := make(chan error, 1)
+
+	go func() {
+		log.Infof("grpc gateway (http) server listening at %s", httpAddressFlag)
+		if err := gatewayServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			grpcGatewayServeErrors <-err
+		}
+		close(grpcGatewayServeErrors)
+	}()
+
+{{- end }}
+
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sigs
 
+	log.Infoln("closing grpc server")
 	grpcServer.GracefulStop()
-	log.Infoln("closing server")
+{{- if .EnableGrpcGateway }}
+	log.Infoln("closing grpc gateway (http) server")
+	if err := gatewayServer.Shutdown(ctx); err != nil {
+		log.Errorln(err)
+		hasErrors = true
+	}
+{{- end }}
 
-	hasErrors := false
 	for err := range serveErrors {
-		// Errors here should not be fatal, the BeforeExit hooks should still
-		// get a chance to run.
 		log.Errorln(err)
 		hasErrors = true
 	}
 
-	// Call BeforeExit hooks.
-{{- range $service := .Services }}
-	if err := impl{{ $service.Name }}.BeforeExit(); err != nil {
-		log.Fatal(err)
+{{- if .EnableGrpcGateway }}
+	for err := range grpcGatewayServeErrors {
+		log.Errorln(err)
+		hasErrors = true
 	}
-{{- end}}
-
-	if hasErrors {
-		os.Exit(1)
-	}
+{{- end }}
 }
 
 func setupLogging() {

@@ -59,6 +59,8 @@ type Attributes struct {
 	Services              []Service
 	DefinitionPackage     string
 	ImplementationPackage string
+	EnableGrpcGateway     bool
+	ClientPackage         string
 }
 
 // Service is a set of attributes specific to the Talkie service being rendered.
