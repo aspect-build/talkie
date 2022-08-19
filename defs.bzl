@@ -20,15 +20,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("//entry:defs.bzl", "entrypoints")
 
 def talkie(
-    name,
-    importpath,
-    service_definition,
-    service_implementation,
-    visibility = None,
-    tags = [],
-    enable_grpc_gateway = False,
-    **kwargs
-):
+        name,
+        importpath,
+        service_definition,
+        service_implementation,
+        enable_grpc_gateway = False,
+        tags = [],
+        visibility = None,
+        **kwargs):
     """Wraps all the Talkie targets.
 
     Args:
@@ -36,8 +35,9 @@ def talkie(
         importpath: The importpath used by the client go_library.
         service_definition: The go_library containing the gRPC service definitions.
         service_implementation: The go_library containing the gRPC service implementation.
-        visibility: Forwarded to all wrapped targets.
+        enable_grpc_gateway: Enables gRPC Gateway (http proxy) for the service.
         tags: Forwarded to all wrapped targets.
+        visibility: Forwarded to all wrapped targets.
         **kwargs: Forwarded to the client and server targets.
     """
 
@@ -64,7 +64,7 @@ def talkie(
                 "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
                 "@org_golang_google_grpc//credentials/insecure",
                 ":{}_client".format(name),
-            ]
+            ],
         )
 
     go_binary(

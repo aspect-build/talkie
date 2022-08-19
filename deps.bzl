@@ -1,6 +1,11 @@
+"""This module contains the project repository dependencies.
+"""
+
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 def go_dependencies():
+    """The Go dependencies.
+    """
     go_repository(
         name = "co_honnef_go_tools",
         importpath = "honnef.co/go/tools",
