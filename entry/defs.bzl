@@ -105,7 +105,7 @@ entrypoints = rule(
             doc = "The entrypoint template file for the server program.",
         ),
         "_entry": attr.label(
-            cfg = "host",
+            cfg = "exec",
             default = Label("//entry"),
             doc = "The program that renders the Talkie server and client entrypoints.",
             executable = True,
