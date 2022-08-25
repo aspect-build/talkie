@@ -2,6 +2,28 @@
 """
 
 load("@bazel_gazelle//:deps.bzl", "go_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+def rules_dependencies():
+    """Rules dependencies.
+    """
+    http_archive(
+        name = "com_google_protobuf",
+        sha256 = "990e47a163b4057f98b899eca591981b5b735872b58f59b9ead9cecabbb21a2a",
+        strip_prefix = "protobuf-21.4",
+        urls = [
+            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v21.4.tar.gz",
+            "https://github.com/protocolbuffers/protobuf/archive/v21.4.tar.gz",
+        ],
+    )
+    http_archive(
+        name = "rules_proto",
+        sha256 = "e017528fd1c91c5a33f15493e3a398181a9e821a804eb7ff5acdd1d2d6c2b18d",
+        strip_prefix = "rules_proto-4.0.0-3.20.0",
+        urls = [
+            "https://github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0-3.20.0.tar.gz",
+        ],
+    )
 
 def go_dependencies():
     """The Go dependencies.
@@ -24,7 +46,6 @@ def go_dependencies():
         sum = "h1:cmObMtgIOaEU944SqXtJ9DnlS8IPGGa7pdRnsrpQzXM=",
         version = "v0.34.0",
     )
-
     go_repository(
         name = "com_github_burntsushi_toml",
         importpath = "github.com/BurntSushi/toml",
@@ -91,7 +112,6 @@ def go_dependencies():
         sum = "h1:p104kn46Q8WdvHunIJ9dAyjPVtrBPhSr3KT2yUst43I=",
         version = "v0.0.0-20210107165309-348f09dbbbc0",
     )
-
     go_repository(
         name = "com_github_golang_glog",
         importpath = "github.com/golang/glog",
@@ -122,7 +142,6 @@ def go_dependencies():
         sum = "h1:yAJXTCF9TqKcTiHJAE8dj7HMvPfh66eeA2JYW7eFpSE=",
         version = "v0.0.0-20210407192527-94a9f03dee38",
     )
-
     go_repository(
         name = "com_github_google_uuid",
         importpath = "github.com/google/uuid",
@@ -141,7 +160,6 @@ def go_dependencies():
         sum = "h1:BqHID5W5qnMkug0Z8UmL8tN0gAy4jQ+B4WFt8cCgluU=",
         version = "v2.11.2",
     )
-
     go_repository(
         name = "com_github_kr_pretty",
         importpath = "github.com/kr/pretty",
@@ -160,7 +178,6 @@ def go_dependencies():
         sum = "h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=",
         version = "v0.1.0",
     )
-
     go_repository(
         name = "com_github_onsi_ginkgo_v2",
         importpath = "github.com/onsi/ginkgo/v2",
@@ -173,7 +190,6 @@ def go_dependencies():
         sum = "h1:8W0cWlwFkflGPLltQvLRB7ZVD5HuP6ng320w2IS245Q=",
         version = "v1.20.0",
     )
-
     go_repository(
         name = "com_github_pmezard_go_difflib",
         importpath = "github.com/pmezard/go-difflib",
