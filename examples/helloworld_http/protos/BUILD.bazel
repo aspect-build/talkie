@@ -23,7 +23,6 @@ go_proto_library(
 
 go_library(
     name = "protos",
-    srcs = ["dummy.go"],
     embed = [":protos_go_proto"],
     importpath = "github.com/aspect-build/talkie/examples/helloworld_http/protos",
     visibility = ["//visibility:public"],

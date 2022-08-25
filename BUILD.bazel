@@ -1,6 +1,7 @@
 load("@bazel_gazelle//:def.bzl", "gazelle")
 
-# gazelle:ignore packages.go
+# gazelle:exclude packages.go
+# gazelle:exclude **/dummy.go
 # gazelle:prefix github.com/aspect-build/talkie
 gazelle(name = "gazelle")
 
