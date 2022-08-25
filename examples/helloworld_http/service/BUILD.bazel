@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/aspect-build/talkie/examples/helloworld_http/service",
     visibility = ["//visibility:public"],
     deps = [
-        "//examples/helloworld_http/protos",
-        "//service",
+        "//helloworld_http/protos",
+        "@aspect_talkie//service",
     ],
 )
