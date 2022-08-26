@@ -10,7 +10,10 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/aspect-build/talkie/entry",
     visibility = ["//visibility:private"],
-    deps = ["//entry/render"],
+    deps = [
+        "//entry/render",
+        "@com_github_emicklei_proto//:proto",
+    ],
 )
 
 go_binary(

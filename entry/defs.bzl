@@ -20,19 +20,37 @@ load("@io_bazel_rules_go//go:def.bzl", "GoLibrary")
 
 ProtosInfo = provider(
     doc = "Forwards the .pb.go files found by the _get_protos.",
-    fields = {"stubs": "The .pb.go files."},
+    fields = {
+        "stubs": "The .pb.go files.",
+        "protos": "The .proto files.",
+    },
 )
 
-def _get_protos_impl(_, ctx):
-    if not hasattr(ctx.rule.attr, "embed") or not len(ctx.rule.attr.embed):
-        return []
-    embed = ctx.rule.attr.embed[0]
-    if not hasattr(embed[OutputGroupInfo], "go_generated_srcs"):
-        return []
-    stubs = embed[OutputGroupInfo].go_generated_srcs
-    return [ProtosInfo(stubs = stubs)]
+def _get_protos_impl(target, ctx):
+    if ctx.rule.kind == "proto_library" and hasattr(ctx.rule.attr, "srcs"):
+        srcs = depset(transitive = [src.files for src in ctx.rule.attr.srcs])
+        return _gen_protos_info(parent = None, protos = srcs)
+    if ctx.rule.kind == "go_proto_library" and hasattr(ctx.rule.attr, "proto"):
+        proto = ctx.rule.attr.proto[0]
+        stubs = target[OutputGroupInfo].go_generated_srcs
+        return _gen_protos_info(parent = proto, stubs = stubs)
+    if ctx.rule.kind == "go_library" and hasattr(ctx.rule.attr, "embed"):
+        embed = ctx.rule.attr.embed[0]
+        return _gen_protos_info(parent = embed)
+    return []
 
-_get_protos = aspect(_get_protos_impl)
+def _gen_protos_info(parent, protos = depset([]), stubs = depset([])):
+    parent_protos = parent[ProtosInfo].protos if parent and ProtosInfo in parent else depset([])
+    parent_stubs = parent[ProtosInfo].stubs if parent and ProtosInfo in parent else depset([])
+    return [ProtosInfo(
+        protos = depset(transitive = [protos, parent_protos]),
+        stubs = depset(transitive = [stubs, parent_stubs]),
+    )]
+
+_get_protos = aspect(
+    _get_protos_impl,
+    attr_aspects = ["embed", "proto", "srcs"],
+)
 
 def _entrypoints_impl(ctx):
     outputs = [
@@ -51,11 +69,11 @@ def _entrypoints_impl(ctx):
     if ctx.attr.enable_grpc_gateway:
         args.add("--enable_grpc_gateway")
 
-    stubs = ctx.attr.service_definition[ProtosInfo].stubs
-    args.add_all("--service_stubs", stubs)
+    protos = ctx.attr.service_definition[ProtosInfo].protos
+    args.add_joined("--service_protos", protos, join_with = ";")
 
     ctx.actions.run(
-        inputs = depset([ctx.file._client_template, ctx.file._server_template], transitive = [stubs]),
+        inputs = depset([ctx.file._client_template, ctx.file._server_template], transitive = [protos]),
         outputs = outputs,
         arguments = [args],
         progress_message = "Generating entrypoints for {}".format(ctx.attr.name),

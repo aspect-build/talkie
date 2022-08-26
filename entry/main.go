@@ -18,24 +18,22 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/aspect-build/talkie/entry/render"
+	"github.com/emicklei/proto"
 )
 
 type stringListFlags []string
 
 func (i *stringListFlags) String() string {
-	return strings.Join(*i, ",")
+	return strings.Join(*i, ";")
 }
 
 func (i *stringListFlags) Set(value string) error {
-	*i = append(*i, value)
+	*i = append(*i, strings.Split(value, ";")...)
 	return nil
 }
 
@@ -44,7 +42,7 @@ var serverTemplateFlag string
 var clientOutputFlag string
 var serverOutputFlag string
 var serviceDefinitionFlag string
-var serviceStubsFlag stringListFlags
+var serviceProtosFlag stringListFlags
 var serviceImplementationFlag string
 var enableGrpcGatewayFlag bool
 var serviceClientFlag string
@@ -55,7 +53,7 @@ func init() {
 	flag.StringVar(&clientOutputFlag, "client_output", "", "The client output .go file.")
 	flag.StringVar(&serverOutputFlag, "server_output", "", "The server output .go file.")
 	flag.StringVar(&serviceDefinitionFlag, "service_definition", "", "The go_library for the gRPC service definition.")
-	flag.Var(&serviceStubsFlag, "service_stubs", "The .pb.go files for the gRPC service definition.")
+	flag.Var(&serviceProtosFlag, "service_protos", "The .proto files for the gRPC service definition.")
 	flag.StringVar(&serviceImplementationFlag, "service_implementation", "", "The go_library for the gRPC service implementation.")
 	flag.BoolVar(&enableGrpcGatewayFlag, "enable_grpc_gateway", false, "If a grpc gateway should be created for this service.")
 	flag.StringVar(&serviceClientFlag, "service_client", "", "The importpath from the client go_library target.")
@@ -75,8 +73,8 @@ func main() {
 	}
 	defer serverOutput.Close()
 	services := make([]render.Service, 0)
-	for _, stub := range serviceStubsFlag {
-		svcs, err := parse(stub)
+	for _, proto := range serviceProtosFlag {
+		svcs, err := parse(proto)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -97,45 +95,42 @@ func main() {
 	}
 }
 
-func parse(stub string) ([]render.Service, error) {
-	fset := token.NewFileSet()
-
-	src, err := os.Open(stub)
+func parse(protoFile string) ([]render.Service, error) {
+	src, err := os.Open(protoFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse %q: %w", stub, err)
+		return nil, fmt.Errorf("failed to parse %q: %w", protoFile, err)
 	}
 	defer src.Close()
 
-	f, err := parser.ParseFile(fset, "", src, parser.AllErrors)
+	parser := proto.NewParser(src)
+	definition, err := parser.Parse()
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse %q: %w", stub, err)
+		return nil, fmt.Errorf("failed to parse %q: %w", protoFile, err)
 	}
 
-	v := &visitor{
+	pph := &protoParseHandler{
 		services: make([]render.Service, 0),
 	}
-	ast.Walk(v, f)
+	proto.Walk(
+		definition,
+		proto.WithService(pph.handleService),
+		proto.WithMessage(pph.handleMessage),
+	)
 
-	return v.services, nil
+	return pph.services, nil
 }
 
-type visitor struct {
+type protoParseHandler struct {
 	services []render.Service
 }
 
-func (v *visitor) Visit(n ast.Node) ast.Visitor {
-	if n == nil {
-		return nil
+func (pph *protoParseHandler) handleService(s *proto.Service) {
+	service := render.Service{
+		Name: s.Name,
 	}
-	switch decl := n.(type) {
-	case *ast.TypeSpec:
-		if decl.Name.IsExported() && !strings.HasPrefix(decl.Name.Name, "Unimplemented") && strings.HasSuffix(decl.Name.Name, "Server") {
-			serviceName := strings.TrimSuffix(decl.Name.Name, "Server")
-			service := render.Service{
-				Name: serviceName,
-			}
-			v.services = append(v.services, service)
-		}
-	}
-	return v
+	pph.services = append(pph.services, service)
+}
+
+func (pph *protoParseHandler) handleMessage(m *proto.Message) {
+	// TODO: implement.
 }
