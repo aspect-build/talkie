@@ -36,8 +36,8 @@ import (
 	client "{{ .ClientPackage }}"
 	{{- end }}
 
-	"github.com/aspect-build/talkie/logger"
-	"github.com/aspect-build/talkie/service"
+	"aspect.build/talkie/logger"
+	"aspect.build/talkie/service"
 
 	pb "{{ .DefinitionPackage }}"
 	impl "{{ .ImplementationPackage }}"

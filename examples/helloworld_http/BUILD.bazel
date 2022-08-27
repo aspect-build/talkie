@@ -1,10 +1,10 @@
 load("@aspect_talkie//:defs.bzl", "talkie")
 
-# gazelle:resolve go github.com/aspect-build/talkie/examples/helloworld //helloworld:helloworld_client
+# gazelle:resolve go aspect.build/talkie/examples/helloworld //helloworld:helloworld_client
 talkie(
     name = "helloworld_http",
     enable_grpc_gateway = True,
-    importpath = "github.com/aspect-build/talkie/examples/helloworld_http",
+    importpath = "aspect.build/talkie/examples/helloworld_http",
     service_definition = "//helloworld_http/protos",
     service_implementation = "//helloworld_http/service",
     visibility = ["//visibility:public"],

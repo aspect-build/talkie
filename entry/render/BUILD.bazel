@@ -3,6 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "render",
     srcs = ["render.go"],
-    importpath = "github.com/aspect-build/talkie/entry/render",
+    importpath = "aspect.build/talkie/entry/render",
     visibility = ["//visibility:public"],
 )

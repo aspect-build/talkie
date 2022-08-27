@@ -19,7 +19,7 @@ package helloworld;
 
 import "google/api/annotations.proto";
 
-option go_package = "github.com/aspect-build/talkie/examples/helloworld_http/protos";
+option go_package = "aspect.build/talkie/examples/helloworld_http/protos";
 
 service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply) {

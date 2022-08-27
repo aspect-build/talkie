@@ -28,8 +28,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	client "github.com/aspect-build/talkie/examples/helloworld"
-	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
+	client "aspect.build/talkie/examples/helloworld"
+	pb "aspect.build/talkie/examples/helloworld/protos"
 )
 
 var cmd *exec.Cmd
