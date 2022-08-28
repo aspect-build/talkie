@@ -16,6 +16,11 @@ gcc_toolchain_dependencies()
 load("@aspect_gcc_toolchain//toolchain:defs.bzl", "ARCHS", "gcc_register_toolchain")
 
 gcc_register_toolchain(
+    name = "gcc_toolchain_aarch64",
+    target_arch = ARCHS.aarch64,
+)
+
+gcc_register_toolchain(
     name = "gcc_toolchain_x86_64",
     target_arch = ARCHS.x86_64,
 )
@@ -40,6 +45,10 @@ llvm_toolchain(
     llvm_version = "14.0.0",
     sha256 = {"darwin-arm64": "1b8975db6b638b308c1ee437291f44cf8f67a2fb926eb2e6464efd180e843368"},
     strip_prefix = {"darwin-arm64": "clang+llvm-14.0.0-arm64-apple-darwin"},
+    sysroot = {
+        "linux-aarch64": "@sysroot_aarch64//:sysroot",
+        "linux-x86_64": "@sysroot_x86_64//:sysroot",
+    },
     urls = {"darwin-arm64": ["https://github.com/aspect-build/llvm-project/releases/download/aspect-release-14.0.0/clang+llvm-14.0.0-arm64-apple-darwin.tar.xz"]},
 )
 

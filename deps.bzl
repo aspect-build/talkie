@@ -2,12 +2,14 @@
 """
 
 load("@bazel_gazelle//:deps.bzl", "go_repository")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 def rules_dependencies():
     """Rules dependencies.
     """
-    http_archive(
+    maybe(
+        http_archive,
         name = "com_google_protobuf",
         sha256 = "990e47a163b4057f98b899eca591981b5b735872b58f59b9ead9cecabbb21a2a",
         strip_prefix = "protobuf-21.4",
@@ -16,12 +18,50 @@ def rules_dependencies():
             "https://github.com/protocolbuffers/protobuf/archive/v21.4.tar.gz",
         ],
     )
-    http_archive(
+    maybe(
+        http_archive,
         name = "rules_proto",
         sha256 = "e017528fd1c91c5a33f15493e3a398181a9e821a804eb7ff5acdd1d2d6c2b18d",
         strip_prefix = "rules_proto-4.0.0-3.20.0",
         urls = [
             "https://github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0-3.20.0.tar.gz",
+        ],
+    )
+    maybe(
+        http_archive,
+        name = "io_bazel_rules_docker",
+        sha256 = "b1e80761a8a8243d03ebca8845e9cc1ba6c82ce7c5179ce2b295cd36f7e394bf",
+        urls = [
+            "https://github.com/bazelbuild/rules_docker/releases/download/v0.25.0/rules_docker-v0.25.0.tar.gz",
+        ],
+    )
+    maybe(
+        http_archive,
+        name = "rules_pkg",
+        sha256 = "8a298e832762eda1830597d64fe7db58178aa84cd5926d76d5b744d6558941c2",
+        urls = [
+            "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.7.0/rules_pkg-0.7.0.tar.gz",
+            "https://github.com/bazelbuild/rules_pkg/releases/download/0.7.0/rules_pkg-0.7.0.tar.gz",
+        ],
+    )
+    maybe(
+        http_file,
+        name = "dumb_init_aarch64",
+        downloaded_file_path = "dumb-init",
+        executable = True,
+        sha256 = "b7d648f97154a99c539b63c55979cd29f005f88430fb383007fe3458340b795e",
+        urls = [
+            "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_aarch64",
+        ],
+    )
+    maybe(
+        http_file,
+        name = "dumb_init_x86_64",
+        downloaded_file_path = "dumb-init",
+        executable = True,
+        sha256 = "e874b55f3279ca41415d290c512a7ba9d08f98041b28ae7c2acb19a545f1c4df",
+        urls = [
+            "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64",
         ],
     )
 

@@ -16,11 +16,15 @@
 """This module provides the Talkie rules.
 """
 
+load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//entry:defs.bzl", "entrypoints")
 
 def talkie(
         name,
+        base_image,
         importpath,
         service_definition,
         service_implementation,
@@ -32,6 +36,7 @@ def talkie(
 
     Args:
         name: The name of the service.
+        base_image: The OCI base image used for the Talkie server.
         importpath: The importpath used by the client go_library.
         service_definition: The go_library containing the gRPC service definitions.
         service_implementation: The go_library containing the gRPC service implementation.
@@ -78,9 +83,53 @@ def talkie(
             service_definition,
             service_implementation,
         ] + deps,
+        pure = "on",
+        static = "on",
         tags = tags,
         visibility = visibility,
         **kwargs
+    )
+
+    for arch in ["aarch64", "x86_64"]:
+        transition_name = "{name}_transition_{arch}".format(name = name, arch = arch)
+        platform_transition_filegroup(
+            name = transition_name,
+            srcs = [name],
+            target_platform = "@aspect_talkie//platforms:linux_" + arch,
+        )
+        transition_tar_name = "{name}_transition_{arch}_tar".format(name = name, arch = arch)
+        dumb_init_path = "/usr/local/bin/dumb-init"
+        service_binary_path = "/usr/local/bin/" + name
+        pkg_tar(
+            name = transition_tar_name,
+            files = {
+                transition_name: service_binary_path,
+                "@dumb_init_{}//file".format(arch): dumb_init_path,
+            },
+            include_runfiles = True,
+            strip_prefix = "/",
+        )
+        image_name = "{name}_image_{arch}".format(name = name, arch = arch)
+        container_image(
+            name = image_name,
+            architecture = arch,
+            base = base_image,
+            compression = "gzip",
+            entrypoint = [dumb_init_path, "--", service_binary_path],
+            experimental_tarball_format = "compressed",
+            tars = [transition_tar_name],
+            user = "1000",
+            visibility = visibility,
+        )
+
+    native.alias(
+        name = name + "_image",
+        actual = select({
+            "@aspect_talkie//platforms/config:macos_aarch64": name + "_image_aarch64",
+            "@aspect_talkie//platforms/config:macos_x86_64": name + "_image_x86_64",
+            "@aspect_talkie//platforms/config:linux_aarch64": name + "_image_aarch64",
+            "@aspect_talkie//platforms/config:linux_x86_64": name + "_image_x86_64",
+        }),
     )
 
     go_library(

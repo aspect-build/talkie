@@ -27,6 +27,11 @@ gcc_toolchain_dependencies()
 load("@aspect_gcc_toolchain//toolchain:defs.bzl", "ARCHS", "gcc_register_toolchain")
 
 gcc_register_toolchain(
+    name = "gcc_toolchain_aarch64",
+    target_arch = ARCHS.aarch64,
+)
+
+gcc_register_toolchain(
     name = "gcc_toolchain_x86_64",
     target_arch = ARCHS.x86_64,
 )
@@ -42,6 +47,10 @@ llvm_toolchain(
     llvm_version = "14.0.0",
     sha256 = {"darwin-arm64": "1b8975db6b638b308c1ee437291f44cf8f67a2fb926eb2e6464efd180e843368"},
     strip_prefix = {"darwin-arm64": "clang+llvm-14.0.0-arm64-apple-darwin"},
+    sysroot = {
+        "linux-aarch64": "@sysroot_aarch64//:sysroot",
+        "linux-x86_64": "@sysroot_x86_64//:sysroot",
+    },
     urls = {"darwin-arm64": ["https://github.com/aspect-build/llvm-project/releases/download/aspect-release-14.0.0/clang+llvm-14.0.0-arm64-apple-darwin.tar.xz"]},
 )
 
@@ -98,3 +107,30 @@ load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_
 rules_proto_dependencies()
 
 rules_proto_toolchains()
+
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
+load(
+    "@io_bazel_rules_docker//repositories:repositories.bzl",
+    container_repositories = "repositories",
+)
+
+container_repositories()
+
+load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
+
+container_deps()
+
+load(
+    "@io_bazel_rules_docker//container:container.bzl",
+    "container_pull",
+)
+
+container_pull(
+    name = "distroless_base_debian11",
+    digest = "sha256:d4d57ef52d993ae3d11722ef9d5544980068309085df4c16ae9a0077ab36e218",
+    registry = "gcr.io",
+    repository = "distroless/base-debian11",
+)
