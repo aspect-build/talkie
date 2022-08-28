@@ -41,7 +41,7 @@ var httpAddress string
 var stdout, stderr strings.Builder
 
 var _ = BeforeSuite(func() {
-	server, err := bazel.Runfile("helloworld_http/helloworld_http_server_/helloworld_http_server")
+	server, err := bazel.Runfile("helloworld_http/helloworld_http_/helloworld_http")
 	Expect(err).ToNot(HaveOccurred())
 
 	_, err = os.Stat(server)

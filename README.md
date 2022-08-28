@@ -35,11 +35,11 @@ should see response similar to:
 ```
 //examples/helloworld_http:helloworld_http_client
 //examples/helloworld_http:helloworld_http_entrypoints
-//examples/helloworld_http:helloworld_http_server
+//examples/helloworld_http:helloworld_http
 ```
 
 then, you can run the server to start the service:
 ```
-bazel run //examples/helloworld_http:helloworld_http_server
+bazel run //examples/helloworld_http
 ```
 This will start the service and expose all the endpoints as you created them.

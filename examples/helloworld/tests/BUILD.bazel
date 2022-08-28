@@ -6,7 +6,7 @@ go_test(
         "smoke_suite_test.go",
         "smoke_test.go",
     ],
-    data = ["//helloworld:helloworld_server"],
+    data = ["//helloworld"],
     deps = [
         "//helloworld:helloworld_client",
         "//helloworld/protos",

@@ -42,7 +42,7 @@ def talkie(
     """
 
     client_output = name + "_client.go"
-    server_output = name + "_server.go"
+    server_output = name + ".go"
 
     entrypoints(
         name = name + "_entrypoints",
@@ -68,7 +68,7 @@ def talkie(
         )
 
     go_binary(
-        name = name + "_server",
+        name = name,
         srcs = [server_output],
         deps = [
             "@aspect_talkie//logger",
