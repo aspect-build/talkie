@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "service",
     srcs = ["helloworld.go"],
-    importpath = "aspect.build/talkie/examples/helloworld/service",
+    importpath = "github.com/aspect-build/talkie/examples/helloworld/service",
     visibility = ["//visibility:public"],
     deps = [
         "//helloworld/protos",

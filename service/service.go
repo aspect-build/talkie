@@ -15,7 +15,7 @@
 
 package service
 
-import "aspect.build/talkie/logger"
+import "github.com/aspect-build/talkie/logger"
 
 // Talkie represents a Talkie service. It requires extra methods in addition to
 // the ones defined by the Server interface in the .pb.go stubs.

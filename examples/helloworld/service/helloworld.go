@@ -18,9 +18,9 @@ package service
 import (
 	"context"
 
-	"aspect.build/talkie/service"
+	"github.com/aspect-build/talkie/service"
 
-	pb "aspect.build/talkie/examples/helloworld/protos"
+	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
 )
 
 // Greeter is the service implementation.

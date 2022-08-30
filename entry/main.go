@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	"aspect.build/talkie/entry/render"
+	"github.com/aspect-build/talkie/entry/render"
 	"github.com/emicklei/proto"
 )
 

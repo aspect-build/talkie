@@ -18,7 +18,7 @@ package service_test
 import (
 	"testing"
 
-	"aspect.build/talkie/service"
+	"github.com/aspect-build/talkie/service"
 )
 
 func TestService(t *testing.T) {

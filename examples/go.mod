@@ -1,9 +1,9 @@
-module aspect.build/talkie/examples
+module github.com/aspect-build/talkie/examples
 
 go 1.18
 
 require (
-	aspect.build/talkie v0.0.0-00010101000000-000000000000
+	github.com/aspect-build/talkie v0.0.0-00010101000000-000000000000
 	github.com/bazelbuild/rules_go v0.34.0
 	github.com/onsi/ginkgo/v2 v2.1.4
 	github.com/onsi/gomega v1.20.0
@@ -17,4 +17,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace aspect.build/talkie => ../
+replace github.com/aspect-build/talkie => ../

@@ -15,7 +15,7 @@ go_proto_library(
         "@io_bazel_rules_go//proto:go_grpc",
         "@com_github_grpc_ecosystem_grpc_gateway_v2//protoc-gen-grpc-gateway:go_gen_grpc_gateway",  #keep
     ],
-    importpath = "aspect.build/talkie/examples/helloworld_http/protos",
+    importpath = "github.com/aspect-build/talkie/examples/helloworld_http/protos",
     proto = ":protos_proto",
     visibility = ["//visibility:public"],
     deps = ["@go_googleapis//google/api:annotations_go_proto"],
@@ -24,6 +24,6 @@ go_proto_library(
 go_library(
     name = "protos",
     embed = [":protos_go_proto"],
-    importpath = "aspect.build/talkie/examples/helloworld_http/protos",
+    importpath = "github.com/aspect-build/talkie/examples/helloworld_http/protos",
     visibility = ["//visibility:public"],
 )

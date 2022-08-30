@@ -8,7 +8,7 @@ exports_files([
 go_library(
     name = "entry_lib",
     srcs = ["main.go"],
-    importpath = "aspect.build/talkie/entry",
+    importpath = "github.com/aspect-build/talkie/entry",
     visibility = ["//visibility:private"],
     deps = [
         "//entry/render",

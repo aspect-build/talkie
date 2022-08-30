@@ -1,4 +1,4 @@
-module aspect.build/talkie
+module github.com/aspect-build/talkie
 
 go 1.18
 
