@@ -20,7 +20,7 @@ load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("//entry:defs.bzl", "entrypoints")
+load("//generator:defs.bzl", "entrypoints")
 
 def talkie(
         name,

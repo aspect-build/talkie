@@ -6,18 +6,18 @@ exports_files([
 ])
 
 go_library(
-    name = "entry_lib",
+    name = "generator_lib",
     srcs = ["main.go"],
-    importpath = "github.com/aspect-build/talkie/entry",
+    importpath = "github.com/aspect-build/talkie/generator",
     visibility = ["//visibility:private"],
     deps = [
-        "//entry/render",
+        "//generator/render",
         "@com_github_emicklei_proto//:proto",
     ],
 )
 
 go_binary(
-    name = "entry",
-    embed = [":entry_lib"],
+    name = "generator",
+    embed = [":generator_lib"],
     visibility = ["//visibility:public"],
 )

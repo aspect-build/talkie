@@ -77,7 +77,7 @@ def _entrypoints_impl(ctx):
         outputs = outputs,
         arguments = [args],
         progress_message = "Generating entrypoints for {}".format(ctx.attr.name),
-        executable = ctx.executable._entry,
+        executable = ctx.executable._generator,
     )
 
     return [DefaultInfo(files = depset(outputs))]
@@ -114,18 +114,18 @@ entrypoints = rule(
         ),
         "_client_template": attr.label(
             allow_single_file = True,
-            default = Label("//entry:client_tmpl"),
+            default = Label("//generator:client_tmpl"),
             doc = "The entrypoint template file for the client program.",
         ),
         "_server_template": attr.label(
             allow_single_file = True,
-            default = Label("//entry:server_tmpl"),
+            default = Label("//generator:server_tmpl"),
             doc = "The entrypoint template file for the server program.",
         ),
-        "_entry": attr.label(
+        "_generator": attr.label(
             cfg = "exec",
-            default = Label("//entry"),
-            doc = "The program that renders the Talkie server and client entrypoints.",
+            default = Label("//generator"),
+            doc = "The program that generates the Talkie server and client entrypoints.",
             executable = True,
         ),
     },
