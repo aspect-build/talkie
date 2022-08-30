@@ -4,11 +4,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "aspect_gcc_toolchain",
-    sha256 = "4ffa75a7c499bd96171741656d56646437df725e68d7bc5726e495689c9a6720",
-    strip_prefix = "gcc-toolchain-381975950d0909e1a1608c8a90858536562e4b1d",
-    urls = [
-        "https://github.com/aspect-build/gcc-toolchain/archive/381975950d0909e1a1608c8a90858536562e4b1d.zip",
-    ],
+    sha256 = "3341394b1376fb96a87ac3ca01c582f7f18e7dc5e16e8cf40880a31dd7ac0e1e",
+    strip_prefix = "gcc-toolchain-0.4.2",
+    urls = ["https://github.com/aspect-build/gcc-toolchain/archive/refs/tags/0.4.2.tar.gz"],
 )
 
 http_archive(
