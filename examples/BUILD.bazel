@@ -1,3 +1,4 @@
+load("@aspect_talkie//:defs.bzl", "talkie_deployment")
 load("@bazel_gazelle//:def.bzl", "gazelle")
 
 # gazelle:exclude **/dummy.go
@@ -14,4 +15,12 @@ gazelle(
         "-prune",
     ],
     command = "update-repos",
+)
+
+talkie_deployment(
+    name = "examples_deployment",
+    services = [
+        "//helloworld",
+        "//helloworld_http",
+    ],
 )

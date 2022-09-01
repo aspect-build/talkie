@@ -1,8 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "render",
-    srcs = ["render.go"],
-    importpath = "github.com/aspect-build/talkie/generator/render",
-    visibility = ["//visibility:public"],
-)

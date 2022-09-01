@@ -1,0 +1,4 @@
+exports_files([
+    "k8s_manifest_tmpl",
+    "kind_load_images_tmpl",
+])

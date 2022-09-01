@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "renderer_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/aspect-build/talkie/generator/renderer",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_imdario_mergo//:mergo",
+        "@com_github_masterminds_sprig_v3//:sprig",
+    ],
+)
+
+go_binary(
+    name = "renderer",
+    embed = [":renderer_lib"],
+    visibility = ["//visibility:public"],
+)

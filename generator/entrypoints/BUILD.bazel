@@ -1,0 +1,4 @@
+exports_files([
+    "client_tmpl",
+    "server_tmpl",
+])

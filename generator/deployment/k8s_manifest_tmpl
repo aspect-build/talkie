@@ -1,0 +1,77 @@
+# Copyright 2022 Aspect Build Systems Inc.
+# Original authors: Thulio Ferraz Assis (thulio@aspect.dev)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# GENERATED FILE - DO NOT EDIT!
+
+{{- range $service := .services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $service.service_name | lower }}
+  labels:
+    app.kubernetes.io/name: {{ $service.service_name | lower }}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $service.service_name | lower }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $service.service_name | lower }}
+    spec:
+      containers:
+      - name: {{ $service.service_name | lower }}
+        {{- if $.container_registry }}
+        image: {{ printf "%s/%s" $.container_registry $service.image_name | quote }}
+        {{- else }}
+        image: {{ $service.image_name | quote }}
+        {{- end }}
+        imagePullPolicy: IfNotPresent
+        args:
+        - "-grpc-address=0.0.0.0:50051"
+        {{- if $service.enable_grpc_gateway }}
+        - "-http-address=0.0.0.0:8090"
+        {{- end}}
+        ports:
+        - containerPort: 50051
+          name: grpc
+        {{- if $service.enable_grpc_gateway }}
+        - containerPort: 8090
+          name: grpc-gateway
+        {{- end}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $service.service_name | lower }}
+  labels:
+    app.kubernetes.io/name: {{ $service.service_name | lower }}
+spec:
+  selector:
+    app.kubernetes.io/name: {{ $service.service_name | lower }}
+  ports:
+  - name: grpc
+    protocol: TCP
+    port: 50051
+    targetPort: grpc
+  {{- if $service.enable_grpc_gateway }}
+  - name: grpc-gateway
+    protocol: TCP
+    port: 8090
+    targetPort: grpc-gateway
+  {{- end}}
+{{- end}}

@@ -29,18 +29,18 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
-	{{- if .EnableGrpcGateway }}
+	{{- if .enable_grpc_gateway }}
 	"errors"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"net/http"
-	client "{{ .ClientPackage }}"
+	client "{{ .service_client }}"
 	{{- end }}
 
 	"github.com/aspect-build/talkie/logger"
 	"github.com/aspect-build/talkie/service"
 
-	pb "{{ .DefinitionPackage }}"
-	impl "{{ .ImplementationPackage }}"
+	pb "{{ .service_definition }}"
+	impl "{{ .service_implementation }}"
 )
 
 var grpcAddressFlag string
@@ -68,7 +68,7 @@ func main() {
 	serviceDependencies := service.Dependencies{
 		Log: log,
 	}
-{{- range $service := .Services }}
+{{- range $service := .services }}
 	impl{{ $service.Name }} := &impl.{{ $service.Name }}{
 		Dependencies: serviceDependencies,
 	}
@@ -77,7 +77,7 @@ func main() {
 {{- end}}
 
 	// Call BeforeStart hooks.
-{{- range $service := .Services }}
+{{- range $service := .services }}
 	if err := impl{{ $service.Name }}.BeforeStart(); err != nil {
 		log.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func main() {
 
 	// Defer the call to BeforeExit hooks.
 	defer func(){
-{{- range $service := .Services }}
+{{- range $service := .services }}
 		if err := impl{{ $service.Name }}.BeforeExit(); err != nil {
 			log.Errorln(err)
 			hasErrors = true
@@ -104,7 +104,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
-{{- range $service := .Services }}
+{{- range $service := .services }}
 	pb.Register{{ $service.Name }}Server(grpcServer, impl{{ $service.Name }})
 {{- end}}
 
@@ -118,14 +118,14 @@ func main() {
 		close(serveErrors)
 	}()
 
-{{- if .EnableGrpcGateway }}
+{{- if .enable_grpc_gateway }}
 	clientConnection, err := client.Connect(ctx, grpcAddressFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	gatewayMux := runtime.NewServeMux()
-	{{- range $service := .Services }}
+	{{- range $service := .services }}
 	if err := pb.Register{{ $service.Name }}Handler(ctx, gatewayMux, clientConnection); err != nil {
 		log.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func main() {
 
 	log.Infoln("closing grpc server")
 	grpcServer.GracefulStop()
-{{- if .EnableGrpcGateway }}
+{{- if .enable_grpc_gateway }}
 	log.Infoln("closing grpc gateway (http) server")
 	if err := gatewayServer.Shutdown(ctx); err != nil {
 		log.Errorln(err)
@@ -169,7 +169,7 @@ func main() {
 		hasErrors = true
 	}
 
-{{- if .EnableGrpcGateway }}
+{{- if .enable_grpc_gateway }}
 	for err := range grpcGatewayServeErrors {
 		log.Errorln(err)
 		hasErrors = true

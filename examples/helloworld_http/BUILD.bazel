@@ -1,7 +1,7 @@
-load("@aspect_talkie//:defs.bzl", "talkie")
+load("@aspect_talkie//:defs.bzl", "talkie_service")
 
 # gazelle:resolve go github.com/aspect-build/talkie/examples/helloworld //helloworld:helloworld_client
-talkie(
+talkie_service(
     name = "helloworld_http",
     base_image = "@distroless_base_debian11//image",
     enable_grpc_gateway = True,
