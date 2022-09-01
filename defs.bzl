@@ -233,8 +233,22 @@ def _entrypoints_impl(ctx):
         service_implementation = ctx.attr.service_implementation[GoLibrary].importpath,
     )
 
-    render(ctx, ctx.file._client_template, ctx.outputs.client_output, attributes, [services_json])
-    render(ctx, ctx.file._server_template, ctx.outputs.server_output, attributes, [services_json])
+    render(
+        ctx,
+        template = ctx.file._client_template,
+        output = ctx.outputs.client_output,
+        attributes = attributes,
+        attributes_files = [services_json],
+        run_gofmt = True,
+    )
+    render(
+        ctx,
+        template = ctx.file._server_template,
+        output = ctx.outputs.server_output,
+        attributes = attributes,
+        attributes_files = [services_json],
+        run_gofmt = True,
+    )
     outputs = depset([
         ctx.outputs.client_output,
         ctx.outputs.server_output,
@@ -275,6 +289,12 @@ entrypoints = rule(
             allow_single_file = True,
             default = Label("//generator/entrypoints:client_tmpl"),
             doc = "The entrypoint template file for the client program.",
+        ),
+        "_go_binary": attr.label(
+            allow_single_file = True,
+            cfg = "exec",
+            default = Label("@go_sdk//:bin/go"),
+            executable = True,
         ),
         "_proto_parser": attr.label(
             cfg = "exec",

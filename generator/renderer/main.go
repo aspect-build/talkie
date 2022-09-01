@@ -22,6 +22,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 	"text/template"
@@ -45,12 +46,16 @@ var templateFlag string
 var outputFlag string
 var attributesFlag string
 var attributesFilesFlag stringListFlags
+var rungofmtFlag bool
+var goBinaryPathFlag string
 
 func init() {
 	flag.StringVar(&templateFlag, "template", "", "The input template file.")
 	flag.StringVar(&outputFlag, "output", "", "The rendered output file.")
 	flag.StringVar(&attributesFlag, "attributes", "", "The attributes JSON string.")
 	flag.Var(&attributesFilesFlag, "attributes_file", "An attributes JSON file (can be repeated).")
+	flag.BoolVar(&rungofmtFlag, "run_gofmt", false, "Whether gofmt should run on the output or not.")
+	flag.StringVar(&goBinaryPathFlag, "go_binary_path", "", "The go binary path (only required when -run_gofmt is set).")
 	flag.Parse()
 }
 
@@ -74,15 +79,24 @@ func main() {
 		}
 	}
 
-	k8sManifestOutput, err := os.Create(outputFlag)
+	output, err := os.Create(outputFlag)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer k8sManifestOutput.Close()
+	defer output.Close()
 
 	renderer := &Renderer{}
-	if err := renderer.Render(templateFlag, k8sManifestOutput, attributes); err != nil {
+	if err := renderer.Render(templateFlag, output, attributes); err != nil {
 		log.Fatal(err)
+	}
+
+	if rungofmtFlag {
+		for _, subCmd := range []string{"fmt", "fix"} {
+			cmd := exec.Command(goBinaryPathFlag, subCmd, outputFlag)
+			if err := cmd.Run(); err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
 }
 
