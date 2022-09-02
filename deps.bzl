@@ -366,8 +366,8 @@ def go_dependencies():
         name = "io_k8s_sigs_kind",
         build_external = "external",
         importpath = "sigs.k8s.io/kind",
-        sum = "h1:cNmI3jGBvp7UegEGbC5we8plDtCUmaNRL+bod7JoSCE=",
-        version = "v0.14.0",
+        sum = "h1:Fskj234L4hjQlsScCgeYvCBIRt06cjLzc7+kbr1u8Tg=",
+        version = "v0.15.0",
     )
     go_repository(
         name = "io_k8s_sigs_yaml",

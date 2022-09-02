@@ -9,7 +9,7 @@ require (
 	github.com/imdario/mergo v0.3.13
 	github.com/sirupsen/logrus v1.9.0
 	google.golang.org/grpc v1.49.0
-	sigs.k8s.io/kind v0.14.0
+	sigs.k8s.io/kind v0.15.0
 )
 
 require (
