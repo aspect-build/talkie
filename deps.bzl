@@ -45,6 +45,15 @@ def talkie_dependencies():
         ],
     )
     maybe(
+        http_archive,
+        name = "bazel_gomock",
+        sha256 = "82a5fb946d2eb0fed80d3d70c2556784ec6cb5c35cd65a1b5e93e46f99681650",
+        strip_prefix = "bazel_gomock-1.3",
+        urls = [
+            "https://github.com/jmhodges/bazel_gomock/archive/refs/tags/v1.3.tar.gz",
+        ],
+    )
+    maybe(
         http_file,
         name = "dumb_init_aarch64",
         downloaded_file_path = "dumb-init",
@@ -437,6 +446,7 @@ def go_dependencies():
     )
     go_repository(
         name = "org_golang_x_tools",
+        build_external = "external",
         importpath = "golang.org/x/tools",
         sum = "h1:FDhOuMEY4JVRztM/gsbk+IKUQ8kj74bxZrgw87eMMVc=",
         version = "v0.0.0-20180917221912-90fa682c2a6e",

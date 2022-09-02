@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@aspect_talkie//:defs.bzl", "talkie_client_mock")
+
+talkie_client_mock(
+    name = "helloworld",
+    interfaces = ["GreeterClient"],
+    service_definition = "//helloworld/protos",
+)
+
+go_library(
+    name = "mock",
+    srcs = ["mock_helloworld.go"],
+    importpath = "github.com/aspect-build/talkie/examples/helloworld/client/mock",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//helloworld/protos",
+        "@com_github_golang_mock//gomock:go_default_library",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)

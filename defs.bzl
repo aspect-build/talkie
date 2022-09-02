@@ -18,6 +18,7 @@
 
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@bazel_gomock//:gomock.bzl", "gomock")
 load("@io_bazel_rules_docker//container:bundle.bzl", "container_bundle")
 load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 load("@io_bazel_rules_go//go:def.bzl", "GoLibrary", "go_binary")
@@ -397,6 +398,22 @@ _talkie_client = rule(
     },
     doc = "Forwards the Talkie client source file to the DefaultInfo.",
 )
+
+def talkie_client_mock(name, service_definition, interfaces):
+    gomock(
+        name = "mock_" + name,
+        out = "mock_{}_go".format(name),
+        interfaces = interfaces,
+        library = service_definition,
+        package = "mock",
+        visibility = ["//visibility:private"],
+    )
+
+    write_source_files(
+        name = "write_mock_" + name,
+        files = {"mock_{}.go".format(name): "mock_" + name},
+        visibility = ["//visibility:private"],
+    )
 
 def talkie_deployment(name, services, container_registry = "", **kwargs):
     kind_load_images_output = name + "_kind_load_images.sh"
