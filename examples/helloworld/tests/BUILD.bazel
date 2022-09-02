@@ -6,9 +6,9 @@ go_test(
         "smoke_suite_test.go",
         "smoke_test.go",
     ],
-    data = ["//helloworld:helloworld_service"],
+    data = ["//helloworld"],
     deps = [
-        "//helloworld",
+        "//helloworld/client",
         "//helloworld/protos",
         "@com_github_onsi_ginkgo_v2//:ginkgo",
         "@com_github_onsi_gomega//:gomega",

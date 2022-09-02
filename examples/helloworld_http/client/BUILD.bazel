@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@aspect_talkie//:defs.bzl", "talkie_client")
+
+talkie_client(
+    name = "helloworld_http",
+    service = "//helloworld_http",
+)
+
+go_library(
+    name = "client",
+    srcs = ["client.go"],
+    importpath = "github.com/aspect-build/talkie/examples/helloworld_http/client",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//credentials/insecure",
+    ],
+)

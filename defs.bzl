@@ -60,12 +60,6 @@ def talkie_service(
         visibility = ["//visibility:private"],
     )
 
-    write_source_files(
-        name = "write_{}_client".format(name),
-        files = {"client.go": client_output},
-        visibility = ["//visibility:private"],
-    )
-
     server_deps = [
         "@aspect_talkie//logger",
         "@aspect_talkie//service",
@@ -157,6 +151,7 @@ def talkie_service(
 
     _talkie_service(
         name = name,
+        client_source = client_output,
         enable_grpc_gateway = enable_grpc_gateway,
         image = image_target + ".tar",
         image_name = image_name,
@@ -300,7 +295,8 @@ entrypoints = rule(
 TalkieServiceInfo = provider(
     doc = "Contains the information needed to consume a Talkie service.",
     fields = {
-        "enable_grpc_gateway": "If a grpc gateway should be created for this service",
+        "client_source": "The client .go source file for connecting to the service.",
+        "enable_grpc_gateway": "If a grpc gateway should be created for this service.",
         "image_name": "The image name (does not include the image repository).",
         "image_tar": "The image tarballs.",
         "service_name": "The service name.",
@@ -308,9 +304,6 @@ TalkieServiceInfo = provider(
 )
 
 def _talkie_service_impl(ctx):
-    if not ctx.attr.name.endswith("_service"):
-        fail("By convention, talkie_service targets must have the _service suffix")
-
     # The DefaultInfo of this rule is the same as the server, so we forward it.
     server_default_info = ctx.attr.server[DefaultInfo]
     executable = ctx.actions.declare_file(ctx.attr.name)
@@ -329,6 +322,7 @@ def _talkie_service_impl(ctx):
     # the deployment rules and any other rules that may want more information
     # about this Talkie service.
     talkie_service_info = TalkieServiceInfo(
+        client_source = ctx.file.client_source,
         enable_grpc_gateway = ctx.attr.enable_grpc_gateway,
         image_name = ctx.attr.image_name,
         image_tar = ctx.file.image,
@@ -346,6 +340,11 @@ def _sanitize_service_name(service_name):
 _talkie_service = rule(
     _talkie_service_impl,
     attrs = {
+        "client_source": attr.label(
+            allow_single_file = True,
+            doc = "The client .go source file for connecting to the service.",
+            mandatory = True,
+        ),
         "enable_grpc_gateway": attr.bool(
             doc = "If a grpc gateway should be created for this service",
             mandatory = False,
@@ -368,6 +367,35 @@ _talkie_service = rule(
     },
     doc = "The Talkie service. The DefaultInfo forwards the server but it also returns the TalkieServiceInfo, used extensively by talkie_deployment.",
     executable = True,
+)
+
+def talkie_client(name, service, **kwargs):
+    _talkie_client(
+        name = name,
+        service = service,
+        **kwargs
+    )
+
+    write_source_files(
+        name = "write_" + name,
+        files = {"client.go": name},
+        visibility = ["//visibility:private"],
+    )
+
+def _talkie_client_impl(ctx):
+    files = [ctx.attr.service[TalkieServiceInfo].client_source]
+    return [DefaultInfo(files = depset(files))]
+
+_talkie_client = rule(
+    _talkie_client_impl,
+    attrs = {
+        "service": attr.label(
+            doc = "The Talkie service to extract the client source.",
+            mandatory = True,
+            providers = [TalkieServiceInfo],
+        ),
+    },
+    doc = "Forwards the Talkie client source file to the DefaultInfo.",
 )
 
 def talkie_deployment(name, services, container_registry = "", **kwargs):

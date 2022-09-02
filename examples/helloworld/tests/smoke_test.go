@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	client "github.com/aspect-build/talkie/examples/helloworld"
+	"github.com/aspect-build/talkie/examples/helloworld/client"
 	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
 )
 
@@ -40,7 +40,7 @@ var address string
 var stdout, stderr strings.Builder
 
 var _ = BeforeSuite(func() {
-	server, err := bazel.Runfile("helloworld/helloworld_service_server_/helloworld_service_server")
+	server, err := bazel.Runfile("helloworld/helloworld_server_/helloworld_server")
 	Expect(err).ToNot(HaveOccurred())
 
 	_, err = os.Stat(server)

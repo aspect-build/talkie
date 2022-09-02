@@ -20,7 +20,7 @@ gazelle(
 talkie_deployment(
     name = "examples_deployment",
     services = [
-        "//helloworld:helloworld_service",
-        "//helloworld_http:helloworld_http_service",
+        "//helloworld",
+        "//helloworld_http",
     ],
 )
