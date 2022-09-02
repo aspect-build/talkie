@@ -40,7 +40,7 @@ var address string
 var stdout, stderr strings.Builder
 
 var _ = BeforeSuite(func() {
-	server, err := bazel.Runfile("helloworld/helloworld_server_/helloworld_server")
+	server, err := bazel.Runfile("helloworld/helloworld_service_server_/helloworld_service_server")
 	Expect(err).ToNot(HaveOccurred())
 
 	_, err = os.Stat(server)

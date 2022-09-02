@@ -1,11 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@aspect_talkie//:defs.bzl", "talkie_service")
 
-# gazelle:resolve go github.com/aspect-build/talkie/examples/helloworld //helloworld:helloworld_client
 talkie_service(
-    name = "helloworld",
+    name = "helloworld_service",
     base_image = "@distroless_base_debian11//image",
-    importpath = "github.com/aspect-build/talkie/examples/helloworld",
     service_definition = "//helloworld/protos",
     service_implementation = "//helloworld/service",
     visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "helloworld",
+    srcs = ["client.go"],
+    importpath = "github.com/aspect-build/talkie/examples/helloworld",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//credentials/insecure",
+    ],
 )

@@ -6,7 +6,7 @@ go_test(
         "smoke_suite_test.go",
         "smoke_test.go",
     ],
-    data = ["//helloworld_http"],
+    data = ["//helloworld_http:helloworld_http_service"],
     deps = [
         "@com_github_onsi_ginkgo_v2//:ginkgo",
         "@com_github_onsi_gomega//:gomega",

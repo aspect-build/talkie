@@ -17,16 +17,16 @@
 """
 
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("@io_bazel_rules_docker//container:bundle.bzl", "container_bundle")
 load("@io_bazel_rules_docker//container:image.bzl", "container_image")
-load("@io_bazel_rules_go//go:def.bzl", "GoLibrary", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "GoLibrary", "go_binary")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//generator/renderer:defs.bzl", "render")
 
 def talkie_service(
         name,
         base_image,
-        importpath,
         service_definition,
         service_implementation,
         container_repository = "",
@@ -38,7 +38,6 @@ def talkie_service(
     Args:
         name: The name of the service.
         base_image: The OCI base image used for the Talkie server.
-        importpath: The importpath used by the client go_library.
         service_definition: The go_library containing the gRPC service definitions.
         service_implementation: The go_library containing the gRPC service implementation.
         container_repository: A container repository to prefix the service images.
@@ -47,8 +46,8 @@ def talkie_service(
         visibility: Forwarded to all wrapped targets.
     """
 
-    client_output = name + "_client.go"
-    server_output = name + ".go"
+    client_output = name + "_generated_client.go"
+    server_output = name + "_generated_server.go"
 
     entrypoints(
         name = name + "_entrypoints",
@@ -57,24 +56,14 @@ def talkie_service(
         server_output = server_output,
         service_definition = service_definition,
         service_implementation = service_implementation,
-        service_client = importpath,
         tags = tags,
         visibility = ["//visibility:private"],
     )
 
-    client_library_target = name + "_client"
-    go_library(
-        name = client_library_target,
-        srcs = [client_output],
-        deps = [
-            "@org_golang_google_grpc//:grpc",
-            "@org_golang_google_grpc//credentials/insecure",
-            service_definition,
-            service_implementation,
-        ],
-        importpath = importpath,
-        tags = tags,
-        visibility = visibility,
+    write_source_files(
+        name = "write_{}_client".format(name),
+        files = {"client.go": client_output},
+        visibility = ["//visibility:private"],
     )
 
     server_deps = [
@@ -90,7 +79,6 @@ def talkie_service(
         server_deps.extend([
             "@com_github_grpc_ecosystem_grpc_gateway_v2//runtime",
             "@org_golang_google_grpc//credentials/insecure",
-            client_library_target,
         ])
 
     server_binary_target = name + "_server"
@@ -169,7 +157,6 @@ def talkie_service(
 
     _talkie_service(
         name = name,
-        client = client_library_target,
         enable_grpc_gateway = enable_grpc_gateway,
         image = image_target + ".tar",
         image_name = image_name,
@@ -228,7 +215,6 @@ def _entrypoints_impl(ctx):
 
     attributes = struct(
         enable_grpc_gateway = ctx.attr.enable_grpc_gateway,
-        service_client = ctx.attr.service_client,
         service_definition = ctx.attr.service_definition[GoLibrary].importpath,
         service_implementation = ctx.attr.service_implementation[GoLibrary].importpath,
     )
@@ -268,10 +254,6 @@ entrypoints = rule(
             doc = "The go_library for the gRPC service implementation.",
             mandatory = True,
             providers = [GoLibrary],
-        ),
-        "service_client": attr.string(
-            doc = "The importpath from the go_library target.",
-            mandatory = True,
         ),
         "client_output": attr.output(
             doc = "The generated client output .go file.",
@@ -326,6 +308,9 @@ TalkieServiceInfo = provider(
 )
 
 def _talkie_service_impl(ctx):
+    if not ctx.attr.name.endswith("_service"):
+        fail("By convention, talkie_service targets must have the _service suffix")
+
     # The DefaultInfo of this rule is the same as the server, so we forward it.
     server_default_info = ctx.attr.server[DefaultInfo]
     executable = ctx.actions.declare_file(ctx.attr.name)
@@ -374,11 +359,6 @@ _talkie_service = rule(
             default = "",
             doc = "The image name.",
             mandatory = False,
-        ),
-        "client": attr.label(
-            doc = "The go_library for the Talkie client.",
-            mandatory = True,
-            providers = [GoLibrary],
         ),
         "server": attr.label(
             doc = "The go_binary for the Talkie server.",

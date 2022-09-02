@@ -18,7 +18,7 @@ package smoke_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -41,8 +41,8 @@ var httpAddress string
 var stdout, stderr strings.Builder
 
 var _ = BeforeSuite(func() {
-	server, err := bazel.Runfile("helloworld_http/helloworld_http_server_/helloworld_http_server")
-	Expect(err).ToNot(HaveOccurred())
+	server, err := bazel.Runfile("helloworld_http/helloworld_http_service_server_/helloworld_http_service_server")
+	Expect(err).To(Not(HaveOccurred()))
 
 	_, err = os.Stat(server)
 	Expect(err).ToNot(HaveOccurred())
@@ -81,7 +81,7 @@ var _ = Describe("Helloworld", func() {
 				reqData := bytes.NewBufferString(`{"name":"John"}`)
 				resp, err := http.Post(fmt.Sprintf("http://%s/v1/example/say_hello", httpAddress), "application/json", reqData)
 				Expect(err).ToNot(HaveOccurred())
-				respBody, err := ioutil.ReadAll(resp.Body)
+				respBody, err := io.ReadAll(resp.Body)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(respBody)).To(Equal(`{"message":"Hello John"}`))
 			})
