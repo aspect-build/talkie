@@ -23,7 +23,27 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/aspect-build/talkie/examples/helloworld_http/protos"
 )
+
+// Greeter wraps a pb.GreeterClient by offering the
+// Connect and Disconnect methods.
+type Greeter interface {
+	Connect(ctx context.Context, serverAddr string, extraOpts ...grpc.DialOption) error
+	Client() pb.GreeterClient
+	Disconnect() error
+}
+
+// NewGreeter constructs a Greeter.
+func NewGreeter() Greeter {
+	return &greeter{}
+}
+
+type greeter struct {
+	conn   *grpc.ClientConn
+	client pb.GreeterClient
+}
 
 var defaultOptions = []grpc.DialOption{
 	// The connection to the server is a blocking call.
@@ -32,13 +52,27 @@ var defaultOptions = []grpc.DialOption{
 	grpc.WithTransportCredentials(insecure.NewCredentials()),
 }
 
-// Connect creates a new gRPC client connection. This is a blocking operation,
-// so always pass a context with a timeout.
-func Connect(ctx context.Context, serverAddr string, extraOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+// Connect connects to the Greeter service.
+func (c *greeter) Connect(ctx context.Context, serverAddr string, extraOpts ...grpc.DialOption) error {
 	opts := append(defaultOptions, extraOpts...)
 	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new client connection: %w", err)
+		return fmt.Errorf("failed to connect to Greeter: %w", err)
 	}
-	return conn, nil
+	c.client = pb.NewGreeterClient(conn)
+	c.conn = conn
+	return nil
+}
+
+// Client returns the connected client for Greeter.
+func (c *greeter) Client() pb.GreeterClient {
+	return c.client
+}
+
+// Disconnect disconnects the client from the Greeter service.
+func (c *greeter) Disconnect() error {
+	if err := c.conn.Close(); err != nil {
+		return fmt.Errorf("failed to close connection to Greeter: %w", err)
+	}
+	return nil
 }

@@ -94,7 +94,6 @@ func parse(protoFile string) ([]Service, error) {
 	proto.Walk(
 		definition,
 		proto.WithService(pph.handleService),
-		proto.WithMessage(pph.handleMessage),
 	)
 
 	return pph.services, nil
@@ -109,10 +108,6 @@ func (pph *protoParseHandler) handleService(s *proto.Service) {
 		Name: s.Name,
 	}
 	pph.services = append(pph.services, service)
-}
-
-func (pph *protoParseHandler) handleMessage(m *proto.Message) {
-	// TODO: implement.
 }
 
 type Service struct {

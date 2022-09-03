@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/aspect-build/talkie/examples/helloworld/client"
+	helloworld "github.com/aspect-build/talkie/examples/helloworld/client"
 	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
 )
 
@@ -75,11 +75,11 @@ var _ = Describe("Helloworld", func() {
 			It("Should reply with a message containing the caller name", func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 				defer cancel()
-				clientConnection, err := client.Connect(ctx, address)
+				greeter := helloworld.NewGreeter()
+				err := greeter.Connect(ctx, address)
 				Expect(err).ToNot(HaveOccurred())
-				defer clientConnection.Close()
-				client := pb.NewGreeterClient(clientConnection)
-				reply, err := client.SayHello(ctx, &pb.HelloRequest{Name: "John"})
+				defer greeter.Disconnect()
+				reply, err := greeter.Client().SayHello(ctx, &pb.HelloRequest{Name: "John"})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(reply.GetMessage()).To(Equal("Hello John"))
 			})

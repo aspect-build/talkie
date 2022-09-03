@@ -23,7 +23,28 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	pb "{{ .service_definition }}"
 )
+
+{{- range $service := .services }}
+// {{ $service.Name }} wraps a pb.{{ $service.Name }}Client by offering the
+// Connect and Disconnect methods.
+type {{ $service.Name }} interface {
+	Connect(ctx context.Context, serverAddr string, extraOpts ...grpc.DialOption) error
+	Client() pb.{{ $service.Name }}Client
+	Disconnect() error
+}
+
+// New{{ $service.Name }} constructs a {{ $service.Name }}.
+func New{{ $service.Name }}() {{ $service.Name }} {
+	return &{{ $service.Name | lower }}{}
+}
+
+type {{ $service.Name | lower }} struct {
+	conn *grpc.ClientConn
+	client pb.{{ $service.Name }}Client
+}
 
 var defaultOptions = []grpc.DialOption{
 	// The connection to the server is a blocking call.
@@ -32,13 +53,28 @@ var defaultOptions = []grpc.DialOption{
 	grpc.WithTransportCredentials(insecure.NewCredentials()),
 }
 
-// Connect creates a new gRPC client connection. This is a blocking operation,
-// so always pass a context with a timeout.
-func Connect(ctx context.Context, serverAddr string, extraOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+// Connect connects to the {{ $service.Name }} service.
+func (c *{{ $service.Name | lower }}) Connect(ctx context.Context, serverAddr string, extraOpts ...grpc.DialOption) error {
 	opts := append(defaultOptions, extraOpts...)
 	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create new client connection: %w", err)
+		return fmt.Errorf("failed to connect to {{ $service.Name }}: %w", err)
 	}
-	return conn, nil
+	c.client = pb.New{{ $service.Name }}Client(conn)
+	c.conn = conn
+	return nil
 }
+
+// Client returns the connected client for {{ $service.Name }}.
+func (c *{{ $service.Name | lower }}) Client() pb.{{ $service.Name }}Client {
+	return c.client
+}
+
+// Disconnect disconnects the client from the {{ $service.Name }} service.
+func (c *{{ $service.Name | lower }}) Disconnect() error {
+	if err := c.conn.Close(); err != nil {
+		return fmt.Errorf("failed to close connection to {{ $service.Name }}: %w", err)
+	}
+	return nil
+}
+{{- end }}
