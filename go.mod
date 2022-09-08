@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.2
+	github.com/avast/retry-go/v4 v4.1.0
 	github.com/emicklei/proto v1.11.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
 	github.com/imdario/mergo v0.3.13

@@ -21,9 +21,7 @@ import (
 	"github.com/aspect-build/talkie/service"
 )
 
-func TestService(t *testing.T) {
-	// Ensure the Default* types satisfy the Talkie interface.
-	var _ service.Talkie = &struct {
-		service.DefaultHooks
-	}{}
+func TestTalkie(t *testing.T) {
+	// Ensure Talkie satisfies the Service interface.
+	var _ service.Service = &service.Talkie{}
 }

@@ -20,21 +20,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $service.service_name | lower }}
+  name: {{ $service.service_name | kebabcase }}
   labels:
-    app.kubernetes.io/name: {{ $service.service_name | lower }}
+    app.kubernetes.io/name: {{ $service.service_name | kebabcase }}
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ $service.service_name | lower }}
+      app.kubernetes.io/name: {{ $service.service_name | kebabcase }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ $service.service_name | lower }}
+        app.kubernetes.io/name: {{ $service.service_name | kebabcase }}
     spec:
       containers:
-      - name: {{ $service.service_name | lower }}
+      - name: {{ $service.service_name | kebabcase }}
         {{- if $.container_registry }}
         image: {{ printf "%s/%s" $.container_registry $service.image_name | quote }}
         {{- else }}
@@ -46,6 +46,11 @@ spec:
         {{- if $service.enable_grpc_gateway }}
         - "-http-address=0.0.0.0:8090"
         {{- end}}
+        env:
+        {{- range $client := $service.talks_to }}
+        - name: "{{ $client.service_name | upper }}_ADDRESS"
+          value: "{{ $client.service_name | kebabcase }}:50051"
+        {{- end }}
         ports:
         - containerPort: 50051
           name: grpc
@@ -57,12 +62,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $service.service_name | lower }}
+  name: {{ $service.service_name | kebabcase }}
   labels:
-    app.kubernetes.io/name: {{ $service.service_name | lower }}
+    app.kubernetes.io/name: {{ $service.service_name | kebabcase }}
 spec:
   selector:
-    app.kubernetes.io/name: {{ $service.service_name | lower }}
+    app.kubernetes.io/name: {{ $service.service_name | kebabcase }}
   ports:
   - name: grpc
     protocol: TCP

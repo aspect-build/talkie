@@ -3,6 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "logger",
     srcs = ["logger.go"],
-    importpath = "github.com/aspect-build/talkie/logger",
+    importpath = "github.com/aspect-build/talkie/service/logger",
     visibility = ["//visibility:public"],
 )

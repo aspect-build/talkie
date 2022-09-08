@@ -26,21 +26,37 @@ import (
 	"os/signal"
 	"syscall"
 
+	{{- if any .talks_to }}
+	"time"
+
+	retry "github.com/avast/retry-go/v4"
+	{{- end }}
+
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
 	{{- if .enable_grpc_gateway }}
 	"errors"
+	"net/http"
+	"strconv"
+
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc/credentials/insecure"
-	"net/http"
 	{{- end }}
 
-	"github.com/aspect-build/talkie/logger"
+	"github.com/aspect-build/talkie/service/client"
+	"github.com/aspect-build/talkie/service/logger"
 	"github.com/aspect-build/talkie/service"
 
 	pb "{{ .service_definition }}"
 	impl "{{ .service_implementation }}"
+
+	{{ if any .talks_to }}
+	// Talkie client libraries this service can talk to.
+	{{- range $client := .talks_to }}
+	{{ $client.service_name | lower }} "{{ $client.importpath }}"
+	{{- end}}
+	{{- end}}
 )
 
 var grpcAddressFlag string
@@ -60,20 +76,39 @@ func init() {
 
 func main() {
 	ctx := context.Background()
-	_ = ctx
 
 	hasErrors := false
+	defer func() {
+		if hasErrors {
+			os.Exit(1)
+		}
+	}()
+
+	talkieClients, err := talkieClients(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		{{- range $client := .talks_to }}
+		log.Infof("disconnecting from {{ $client.service_name }} Service")
+		if err := talkieClients["{{ $client.service_name }}"].({{ $client.service_name | lower }}.{{ $client.service_name }}).Disconnect(); err != nil {
+			log.Errorln(err)
+			hasErrors = true
+		}
+		{{- end}}
+	}()
 
 	// Instantiate all services.
-	serviceDependencies := service.Dependencies{
-		Log: log,
+	talkieDefaultImpl := service.Talkie{
+		Log: 			log,
+		ClientRegistry: client.NewRegistry(talkieClients),
 	}
 {{- range $service := .services }}
 	impl{{ $service.Name }} := &impl.{{ $service.Name }}{
-		Dependencies: serviceDependencies,
+		Talkie: talkieDefaultImpl,
 	}
-	// Ensure {{ $service.Name }} satisfies service.Talkie.
-	var _ service.Talkie = impl{{ $service.Name }}
+	// Ensure {{ $service.Name }} satisfies service.Service.
+	var _ service.Service = impl{{ $service.Name }}
 {{- end}}
 
 	// Call BeforeStart hooks.
@@ -91,9 +126,6 @@ func main() {
 			hasErrors = true
 		}
 {{- end}}
-		if hasErrors {
-			os.Exit(1)
-		}
 	}()
 
 	listener, err := net.Listen("tcp", grpcAddressFlag)
@@ -119,14 +151,14 @@ func main() {
 	}()
 
 {{- if .enable_grpc_gateway }}
-	clientConnection, err := clientConnect(ctx, grpcAddressFlag)
+	httpGatewayClientConn, err := grpcLocalConnect(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	gatewayMux := runtime.NewServeMux()
 	{{- range $service := .services }}
-	if err := pb.Register{{ $service.Name }}Handler(ctx, gatewayMux, clientConnection); err != nil {
+	if err := pb.Register{{ $service.Name }}Handler(ctx, gatewayMux, httpGatewayClientConn); err != nil {
 		log.Fatal(err)
 	}
 	{{- end}}
@@ -177,6 +209,40 @@ func main() {
 {{- end }}
 }
 
+func talkieClients(ctx context.Context) (map[string]interface{}, error) {
+	clients := make(map[string]interface{})
+
+	{{- range $client := .talks_to }}
+	{{ $client.service_name | lower }}Address := os.Getenv("{{ $client.service_name | upper }}_ADDRESS")
+	if {{ $client.service_name | lower }}Address == "" {
+		err := fmt.Errorf("expected %q environment variable to be set", "{{ $client.service_name | upper }}_ADDRESS")
+		return nil, fmt.Errorf("failed to initialize service: %w", err)
+	}
+	{{- end}}
+	{{- range $client := .talks_to }}
+	connectTo{{ $client.service_name }} := func() error {
+		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+		defer cancel()
+		log.Infof("connecting to the {{ $client.service_name }} Service at %s", {{ $client.service_name | lower }}Address)
+		{{ $client.service_name | lower }} := {{ $client.service_name | lower }}.New{{ $client.service_name }}()
+		if err := {{ $client.service_name | lower }}.Connect(ctx, {{ $client.service_name | lower }}Address); err != nil {
+			return fmt.Errorf("failed to connect to the {{ $client.service_name }} Service: %w", err)
+		}
+		log.Infof("connected to the {{ $client.service_name }} Service at %s", {{ $client.service_name | lower }}Address)
+		clients["{{ $client.service_name }}"] = {{ $client.service_name | lower }}
+		return nil
+	}
+	if err := retry.Do(
+		connectTo{{ $client.service_name }},
+		retry.Attempts(5),
+	); err != nil {
+		return nil, fmt.Errorf("failed to initialize service: %w", err)
+	}
+	{{- end}}
+
+	return clients, nil
+}
+
 func setupLogging() {
 	l := logrus.New()
 	l.Formatter = &logrus.JSONFormatter{}
@@ -191,12 +257,20 @@ func setupLogging() {
 }
 
 {{- if .enable_grpc_gateway }}
-func clientConnect(ctx context.Context, serverAddr string) (*grpc.ClientConn, error) {
+func grpcLocalConnect(ctx context.Context) (*grpc.ClientConn, error) {
 	opts := []grpc.DialOption{
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
-	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
+	_, portStr, err := net.SplitHostPort(grpcAddressFlag)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new client connection: %w", err)
+	}
+	port, err := strconv.ParseUint(portStr, 10, 16)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new client connection: %w", err)
+	}
+	conn, err := grpc.DialContext(ctx, fmt.Sprintf("127.0.0.1:%d", port), opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new client connection: %w", err)
 	}

@@ -13,12 +13,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package talkie
+package lifecycle
 
-import (
-	_ "github.com/avast/retry-go/v4"
-	_ "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	_ "github.com/sirupsen/logrus"
-	_ "google.golang.org/grpc"
-	_ "sigs.k8s.io/kind"
-)
+// Hooks is the interface that wraps the Talkie service lifecycle hook methods.
+type Hooks interface {
+	BeforeStart() error
+	BeforeExit() error
+}
+
+// DefaultHooks satisfies the hooks methods from Talkie. It's intended to be
+// used by service implementations that don't need any extra logic for hooks.
+type DefaultHooks struct{}
+
+// BeforeStart satisfies Talkie.BeforeStart.
+func (*DefaultHooks) BeforeStart() error {
+	return nil
+}
+
+// BeforeExit satisfies Talkie.BeforeExit.
+func (*DefaultHooks) BeforeExit() error {
+	return nil
+}

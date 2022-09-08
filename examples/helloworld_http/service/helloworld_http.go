@@ -25,8 +25,7 @@ import (
 
 // Greeter is the service implementation.
 type Greeter struct {
-	service.DefaultHooks
-	service.Dependencies
+	service.Talkie
 }
 
 // BeforeStart overrides service.Talkie.BeforeStart. This is not a mandatory

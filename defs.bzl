@@ -30,6 +30,7 @@ def talkie_service(
         base_image,
         service_definition,
         service_implementation,
+        talks_to = [],
         container_repository = "",
         enable_grpc_gateway = False,
         tags = [],
@@ -41,6 +42,7 @@ def talkie_service(
         base_image: The OCI base image used for the Talkie server.
         service_definition: The go_library containing the gRPC service definitions.
         service_implementation: The go_library containing the gRPC service implementation.
+        talks_to: A list of other talkie_service targets this Talkie service can talk to.
         container_repository: A container repository to prefix the service images.
         enable_grpc_gateway: Enables gRPC Gateway (http proxy) for the service.
         tags: Forwarded to all wrapped targets.
@@ -57,18 +59,21 @@ def talkie_service(
         server_output = server_output,
         service_definition = service_definition,
         service_implementation = service_implementation,
+        talks_to = talks_to,
         tags = tags,
         visibility = ["//visibility:private"],
     )
 
     server_deps = [
-        "@aspect_talkie//logger",
         "@aspect_talkie//service",
+        "@aspect_talkie//service/client",
+        "@aspect_talkie//service/logger",
+        "@com_github_avast_retry_go_v4//:retry-go",
         "@com_github_sirupsen_logrus//:logrus",
         "@org_golang_google_grpc//:grpc",
         service_definition,
         service_implementation,
-    ]
+    ] + talks_to
 
     if enable_grpc_gateway:
         server_deps.extend([
@@ -157,6 +162,7 @@ def talkie_service(
         image = image_target + ".tar",
         image_name = image_name,
         server = server_binary_target,
+        talks_to = talks_to,
         visibility = visibility,
     )
 
@@ -194,6 +200,32 @@ _get_protos = aspect(
     attr_aspects = ["embed", "proto", "srcs"],
 )
 
+TALKIE_SERVICE_NAME_TAG = "TALKIE_SERVICE_NAME"
+
+def _get_service_name_impl(_, ctx):
+    service_name = None
+    for tag in ctx.rule.attr.tags:
+        parts = tag.split("=")
+        if len(parts) == 2 and parts[0] == TALKIE_SERVICE_NAME_TAG:
+            service_name = parts[1]
+    if not service_name:
+        fail("The Talkie client library needs a tag in the format '{}=<service name>'".format(TALKIE_SERVICE_NAME_TAG))
+
+    return [TalkieServiceClientInfo(
+        importpath = ctx.rule.attr.importpath,
+        service_name = service_name,
+    )]
+
+_get_service_name = aspect(_get_service_name_impl)
+
+TalkieServiceClientInfo = provider(
+    doc = "Contains the information needed to consume a Talkie service.",
+    fields = {
+        "importpath": "The importpath for the service client.",
+        "service_name": "The service name.",
+    },
+)
+
 def _entrypoints_impl(ctx):
     args = ctx.actions.args()
 
@@ -213,6 +245,7 @@ def _entrypoints_impl(ctx):
         enable_grpc_gateway = ctx.attr.enable_grpc_gateway,
         service_definition = ctx.attr.service_definition[GoLibrary].importpath,
         service_implementation = ctx.attr.service_implementation[GoLibrary].importpath,
+        talks_to = [s[TalkieServiceClientInfo] for s in ctx.attr.talks_to],
     )
 
     render(
@@ -248,6 +281,13 @@ entrypoints = rule(
         ),
         "service_implementation": attr.label(
             doc = "The go_library for the gRPC service implementation.",
+            mandatory = True,
+            providers = [GoLibrary],
+        ),
+        "talks_to": attr.label_list(
+            aspects = [_get_service_name],
+            allow_empty = True,
+            doc = "A list of Talkie client targets this service is allowed to communicate.",
             mandatory = True,
             providers = [GoLibrary],
         ),
@@ -301,6 +341,7 @@ TalkieServiceInfo = provider(
         "image_name": "The image name (does not include the image repository).",
         "image_tar": "The image tarballs.",
         "service_name": "The service name.",
+        "talks_to": "A list of Talkie client targets this service is allowed to communicate.",
     },
 )
 
@@ -327,16 +368,14 @@ def _talkie_service_impl(ctx):
         enable_grpc_gateway = ctx.attr.enable_grpc_gateway,
         image_name = ctx.attr.image_name,
         image_tar = ctx.file.image,
-        service_name = _sanitize_service_name(ctx.attr.name),
+        service_name = ctx.attr.name,
+        talks_to = [s[TalkieServiceClientInfo] for s in ctx.attr.talks_to],
     )
 
     return [
         default_info,
         talkie_service_info,
     ]
-
-def _sanitize_service_name(service_name):
-    return service_name.replace("_", "-")
 
 _talkie_service = rule(
     _talkie_service_impl,
@@ -362,6 +401,13 @@ _talkie_service = rule(
         ),
         "server": attr.label(
             doc = "The go_binary for the Talkie server.",
+            mandatory = True,
+            providers = [GoLibrary],
+        ),
+        "talks_to": attr.label_list(
+            aspects = [_get_service_name],
+            allow_empty = True,
+            doc = "A list of Talkie client targets this service is allowed to communicate.",
             mandatory = True,
             providers = [GoLibrary],
         ),
@@ -438,7 +484,12 @@ def _talkie_deployment_impl(ctx):
         fail("Services cannot have duplicated names: {}".format(ctx.attr.services))
 
     deployment_attributes = _deployment_attributes(ctx.attr.container_registry, ctx.attr.services)
-    render(ctx, ctx.file._k8s_manifest_template, ctx.outputs.k8s_manifest_output, deployment_attributes)
+    render(
+        ctx,
+        template = ctx.file._k8s_manifest_template,
+        output = ctx.outputs.k8s_manifest_output,
+        attributes = deployment_attributes,
+    )
     outputs = depset([ctx.outputs.k8s_manifest_output])
     return [DefaultInfo(files = outputs)]
 
@@ -538,6 +589,7 @@ def _deployment_attributes(container_registry, services):
                 image_tar = service[TalkieServiceInfo].image_tar.short_path,
                 image_name = service[TalkieServiceInfo].image_name,
                 service_name = service[TalkieServiceInfo].service_name,
+                talks_to = service[TalkieServiceInfo].talks_to,
             )
             for service in services
         ],
