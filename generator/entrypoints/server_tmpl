@@ -111,6 +111,13 @@ func main() {
 	var _ service.Service = impl{{ $service.Name }}
 {{- end}}
 
+	// Call Initialize hooks.
+{{- range $service := .services }}
+	if err := impl{{ $service.Name }}.Initialize(); err != nil {
+		log.Fatal(err)
+	}
+{{- end}}
+
 	// Call BeforeStart hooks.
 {{- range $service := .services }}
 	if err := impl{{ $service.Name }}.BeforeStart(); err != nil {

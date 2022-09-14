@@ -17,6 +17,7 @@ package lifecycle
 
 // Hooks is the interface that wraps the Talkie service lifecycle hook methods.
 type Hooks interface {
+	Initialize() error
 	BeforeStart() error
 	BeforeExit() error
 }
@@ -24,6 +25,11 @@ type Hooks interface {
 // DefaultHooks satisfies the hooks methods from Talkie. It's intended to be
 // used by service implementations that don't need any extra logic for hooks.
 type DefaultHooks struct{}
+
+// Initialize satisfies Talkie.Initialize.
+func (*DefaultHooks) Initialize() error {
+	return nil
+}
 
 // BeforeStart satisfies Talkie.BeforeStart.
 func (*DefaultHooks) BeforeStart() error {
