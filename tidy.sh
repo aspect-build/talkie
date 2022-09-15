@@ -26,8 +26,8 @@ bazel run @go_sdk//:bin/go -- mod tidy
 bazel run //:gazelle_update_repos
 bazel run //:gazelle
 
-if [ $(git status --porcelain | wc -l) -gt 0 ]; then
-    >&2 echo "ERROR: files changed, commit them"
-    >&2 git diff
+if [ "$(git status --porcelain | wc -l)" -gt 0 ]; then
+    echo >&2 "ERROR: files changed, commit them"
+    git >&2 diff
     exit 1
 fi
