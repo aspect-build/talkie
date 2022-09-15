@@ -36,9 +36,9 @@ spec:
       containers:
       - name: {{ $service.service_name | kebabcase }}
         {{- if $.container_registry }}
-        image: {{ printf "%s/%s" $.container_registry $service.image_name | quote }}
+        image: {{ printf "%s/%s:%s" $.container_registry $service.image_name (get $.workspace_status $service.image_tag_workspace_status_key) | quote }}
         {{- else }}
-        image: {{ $service.image_name | quote }}
+        image: {{ printf "%s:%s" $service.image_name (get $.workspace_status $service.image_tag_workspace_status_key) | quote }}
         {{- end }}
         imagePullPolicy: IfNotPresent
         args:

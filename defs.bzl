@@ -24,12 +24,14 @@ load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 load("@io_bazel_rules_go//go:def.bzl", "GoLibrary", "go_binary")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//generator/renderer:defs.bzl", "render")
+load("//generator/json/bazel_stamp:defs.bzl", "bazel_stamp_to_json")
 
 def talkie_service(
         name,
         base_image,
         service_definition,
         service_implementation,
+        image_tag_workspace_status_key = "STABLE_TALKIE_SERVICE_TAG",
         talks_to = [],
         container_repository = "",
         enable_grpc_gateway = False,
@@ -42,6 +44,7 @@ def talkie_service(
         base_image: The OCI base image used for the Talkie server.
         service_definition: The go_library containing the gRPC service definitions.
         service_implementation: The go_library containing the gRPC service implementation.
+        image_tag_workspace_status_key: The key used to extract the image tag from the Bazel workspace status.
         talks_to: A list of other talkie_service targets this Talkie service can talk to.
         container_repository: A container repository to prefix the service images.
         enable_grpc_gateway: Enables gRPC Gateway (http proxy) for the service.
@@ -141,18 +144,16 @@ def talkie_service(
         }),
     )
     image_target = name + "_image"
-    image_name = "{container_repository}{workspace_name}{package}:{tag}".format(
+    image_name = "{container_repository}{workspace_name}{package}".format(
         container_repository = container_repository + "/" if container_repository else "",
         workspace_name = native.repository_name().replace("@", ""),
         package = native.package_name().replace("/", "_"),
-        # TODO(f0rmiga): do proper tagging. Read from the Bazel workspace status
-        # and also handle when the workspace status is not set for a particular
-        # environment. In that case, use latest.
-        tag = "latest",
     )
+
     container_bundle(
         name = image_target,
-        images = {image_name: image_alias_target},
+        images = {"%s:{%s}" % (image_name, image_tag_workspace_status_key): image_alias_target},
+        stamp = "@io_bazel_rules_docker//stamp:always",
     )
 
     _talkie_service(
@@ -161,6 +162,7 @@ def talkie_service(
         enable_grpc_gateway = enable_grpc_gateway,
         image = image_target + ".tar",
         image_name = image_name,
+        image_tag_workspace_status_key = image_tag_workspace_status_key,
         server = server_binary_target,
         talks_to = talks_to,
         visibility = visibility,
@@ -248,20 +250,21 @@ def _entrypoints_impl(ctx):
         talks_to = [s[TalkieServiceClientInfo] for s in ctx.attr.talks_to],
     )
 
+    attributes_json = ctx.actions.declare_file("{}_attributes.json".format(ctx.attr.name))
+    ctx.actions.write(attributes_json, json.encode(attributes))
+
     render(
         ctx,
         template = ctx.file._client_template,
         output = ctx.outputs.client_output,
-        attributes = attributes,
-        attributes_files = [services_json],
+        attributes_files = [services_json, attributes_json],
         run_gofmt = True,
     )
     render(
         ctx,
         template = ctx.file._server_template,
         output = ctx.outputs.server_output,
-        attributes = attributes,
-        attributes_files = [services_json],
+        attributes_files = [services_json, attributes_json],
         run_gofmt = True,
     )
     outputs = depset([
@@ -338,7 +341,8 @@ TalkieServiceInfo = provider(
     fields = {
         "client_source": "The client .go source file for connecting to the service.",
         "enable_grpc_gateway": "If a grpc gateway should be created for this service.",
-        "image_name": "The image name (does not include the image repository).",
+        "image_name": "The image name (does not include the image repository or image tag).",
+        "image_tag_workspace_status_key": "The key used to extract the image tag from the Bazel workspace status.",
         "image_tar": "The image tarballs.",
         "service_name": "The service name.",
         "talks_to": "A list of Talkie client targets this service is allowed to communicate.",
@@ -367,6 +371,7 @@ def _talkie_service_impl(ctx):
         client_source = ctx.file.client_source,
         enable_grpc_gateway = ctx.attr.enable_grpc_gateway,
         image_name = ctx.attr.image_name,
+        image_tag_workspace_status_key = ctx.attr.image_tag_workspace_status_key,
         image_tar = ctx.file.image,
         service_name = ctx.attr.name,
         talks_to = [s[TalkieServiceClientInfo] for s in ctx.attr.talks_to],
@@ -398,6 +403,10 @@ _talkie_service = rule(
             default = "",
             doc = "The image name.",
             mandatory = False,
+        ),
+        "image_tag_workspace_status_key": attr.string(
+            doc = "The key used to extract the image tag from the Bazel workspace status.",
+            mandatory = True,
         ),
         "server": attr.label(
             doc = "The go_binary for the Talkie server.",
@@ -483,12 +492,23 @@ def _talkie_deployment_impl(ctx):
     if not _validate_services(ctx.attr.services):
         fail("Services cannot have duplicated names: {}".format(ctx.attr.services))
 
+    bazel_stamp_files = [ctx.info_file, ctx.version_file]
+    bazel_stamp_json = ctx.actions.declare_file("{}_bazel_stamping.json".format(ctx.attr.name))
+    bazel_stamp_to_json(
+        ctx,
+        bazel_stamp_files = bazel_stamp_files,
+        output = bazel_stamp_json,
+    )
+
     deployment_attributes = _deployment_attributes(ctx.attr.container_registry, ctx.attr.services)
+    attributes_json = ctx.actions.declare_file("{}_attribues_stamping.json".format(ctx.attr.name))
+    ctx.actions.write(attributes_json, json.encode(deployment_attributes))
+
     render(
         ctx,
         template = ctx.file._k8s_manifest_template,
         output = ctx.outputs.k8s_manifest_output,
-        attributes = deployment_attributes,
+        attributes_files = [bazel_stamp_json, attributes_json],
     )
     outputs = depset([ctx.outputs.k8s_manifest_output])
     return [DefaultInfo(files = outputs)]
@@ -507,6 +527,11 @@ _DEPLOYMENT_ATTRS = {
     "_renderer": attr.label(
         cfg = "exec",
         default = Label("//generator/renderer"),
+        executable = True,
+    ),
+    "_bazel_stamp_to_json": attr.label(
+        cfg = "exec",
+        default = Label("//generator/json/bazel_stamp"),
         executable = True,
     ),
 }
@@ -537,7 +562,16 @@ def _kind_load_images_impl(ctx):
     deployment_attributes = _deployment_attributes(ctx.attr.container_registry, ctx.attr.services)
     kind_attributes = dict({"kind": ctx.executable._kind.short_path})
     attributes = dict(deployment_attributes.items() + kind_attributes.items())
-    render(ctx, ctx.file._kind_load_images_template, ctx.outputs.kind_load_images_output, attributes)
+
+    attributes_json = ctx.actions.declare_file("{}_attribues_stamping.json".format(ctx.attr.name))
+    ctx.actions.write(attributes_json, json.encode(attributes))
+
+    render(
+        ctx,
+        template = ctx.file._kind_load_images_template,
+        output = ctx.outputs.kind_load_images_output,
+        attributes_files = [attributes_json],
+    )
     outputs = depset([
         ctx.outputs.kind_load_images_output,
         ctx.executable._kind,
@@ -588,6 +622,7 @@ def _deployment_attributes(container_registry, services):
                 enable_grpc_gateway = service[TalkieServiceInfo].enable_grpc_gateway,
                 image_tar = service[TalkieServiceInfo].image_tar.short_path,
                 image_name = service[TalkieServiceInfo].image_name,
+                image_tag_workspace_status_key = service[TalkieServiceInfo].image_tag_workspace_status_key,
                 service_name = service[TalkieServiceInfo].service_name,
                 talks_to = service[TalkieServiceInfo].talks_to,
             )

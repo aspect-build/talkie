@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "bazel_stamp_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/aspect-build/talkie/generator/json/bazel_stamp",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "bazel_stamp",
+    embed = [":bazel_stamp_lib"],
+    visibility = ["//visibility:public"],
+)

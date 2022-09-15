@@ -46,7 +46,6 @@ var templateFlag string
 var templateOpenDelimFlag string
 var templateCloseDelimFlag string
 var outputFlag string
-var attributesFlag string
 var attributesFilesFlag stringListFlags
 var rungofmtFlag bool
 var goBinaryPathFlag string
@@ -56,7 +55,6 @@ func init() {
 	flag.StringVar(&templateOpenDelimFlag, "template_open_delim", "{{", "The opening delimiter for the template rendering.")
 	flag.StringVar(&templateCloseDelimFlag, "template_close_delim", "}}", "The closing delimiter for the template rendering.")
 	flag.StringVar(&outputFlag, "output", "", "The rendered output file.")
-	flag.StringVar(&attributesFlag, "attributes", "", "The attributes JSON string.")
 	flag.Var(&attributesFilesFlag, "attributes_file", "An attributes JSON file (can be repeated).")
 	flag.BoolVar(&rungofmtFlag, "run_gofmt", false, "Whether gofmt should run on the output or not.")
 	flag.StringVar(&goBinaryPathFlag, "go_binary_path", "", "The go binary path (only required when -run_gofmt is set).")
@@ -65,19 +63,18 @@ func init() {
 
 func main() {
 	var attributes map[string]interface{}
-	if err := json.Unmarshal([]byte(attributesFlag), &attributes); err != nil {
-		log.Fatal(err)
-	}
 
 	for _, f := range attributesFilesFlag {
 		data, err := os.ReadFile(f)
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		var attributesFile map[string]interface{}
 		if err := json.Unmarshal(data, &attributesFile); err != nil {
 			log.Fatal(err)
 		}
+
 		if err := mergo.Merge(&attributes, attributesFile); err != nil {
 			log.Fatal(err)
 		}
@@ -125,6 +122,7 @@ func (*Renderer) Render(
 	if err != nil {
 		return fmt.Errorf("failed to render template: %w", err)
 	}
+
 	if err := tmpl.Execute(output, attrs); err != nil {
 		return fmt.Errorf("failed to render template: %w", err)
 	}
