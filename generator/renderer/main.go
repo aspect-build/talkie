@@ -43,6 +43,8 @@ func (i *stringListFlags) Set(value string) error {
 }
 
 var templateFlag string
+var templateOpenDelimFlag string
+var templateCloseDelimFlag string
 var outputFlag string
 var attributesFlag string
 var attributesFilesFlag stringListFlags
@@ -51,6 +53,8 @@ var goBinaryPathFlag string
 
 func init() {
 	flag.StringVar(&templateFlag, "template", "", "The input template file.")
+	flag.StringVar(&templateOpenDelimFlag, "template_open_delim", "{{", "The opening delimiter for the template rendering.")
+	flag.StringVar(&templateCloseDelimFlag, "template_close_delim", "}}", "The closing delimiter for the template rendering.")
 	flag.StringVar(&outputFlag, "output", "", "The rendered output file.")
 	flag.StringVar(&attributesFlag, "attributes", "", "The attributes JSON string.")
 	flag.Var(&attributesFilesFlag, "attributes_file", "An attributes JSON file (can be repeated).")
@@ -85,8 +89,13 @@ func main() {
 	}
 	defer output.Close()
 
+	customDelims := delims{
+		open:  templateOpenDelimFlag,
+		close: templateCloseDelimFlag,
+	}
+
 	renderer := &Renderer{}
-	if err := renderer.Render(templateFlag, output, attributes); err != nil {
+	if err := renderer.Render(templateFlag, customDelims, output, attributes); err != nil {
 		log.Fatal(err)
 	}
 
@@ -105,11 +114,12 @@ type Renderer struct{}
 // Render renders the template to output using the attributes.
 func (*Renderer) Render(
 	templateFilename string,
+	customDelims delims,
 	output io.Writer,
 	attrs interface{},
 ) error {
-	tmpl, err := template.
-		New(path.Base(templateFilename)).
+	tmpl, err := template.New(path.Base(templateFilename)).
+		Delims(customDelims.open, customDelims.close).
 		Funcs(sprig.HermeticTxtFuncMap()).
 		ParseFiles(templateFilename)
 	if err != nil {
@@ -119,4 +129,8 @@ func (*Renderer) Render(
 		return fmt.Errorf("failed to render template: %w", err)
 	}
 	return nil
+}
+
+type delims struct {
+	open, close string
 }
