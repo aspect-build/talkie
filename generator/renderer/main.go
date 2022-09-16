@@ -116,6 +116,7 @@ func (*Renderer) Render(
 	attrs interface{},
 ) error {
 	tmpl, err := template.New(path.Base(templateFilename)).
+		Option("missingkey=error"). // If a key is missing when rendering, return an error.
 		Delims(customDelims.open, customDelims.close).
 		Funcs(sprig.HermeticTxtFuncMap()).
 		ParseFiles(templateFilename)
