@@ -1,0 +1,49 @@
+<%- /*
+# Copyright 2022 Aspect Build Systems Inc.
+# Original authors: Thulio Ferraz Assis (thulio@aspect.dev)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+*/ -%>
+
+---
+talkie_services:
+  <%- /* TODO(f0rmiga): add Ingress. */%>
+  <%- /* TODO(f0rmiga): add resource limits. */%>
+  <%- /* TODO(f0rmiga): add autoscaling. */%>
+  <%- /* TODO(f0rmiga): add affinity. */%>
+  <%- /* TODO(f0rmiga): add tolerations. */%>
+  <%- /* TODO(f0rmiga): add possibility of node selector. */%>
+  <%- range $service := .services %>
+  <% $service.service_name | kebabcase %>:
+    image:
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+      <%- if $.container_registry %>
+      registry: <% $.container_registry | quote %>
+      <%- else %>
+      registry: ~
+      <%- end %>
+      repository: <% $service.image_name | quote %>
+      tag: <% (get $.workspace_status $service.version_workspace_status_key) | quote %>
+    # If 'nameOverride' is set, then it replaces all instances of <% $service.service_name | kebabcase %>.
+    nameOverride: ~
+    # Whether this Talkie Service should get a public IP via a LoadBalancer k8s Service type.
+    # TODO(f0rmiga): create public services with LoadBalancers when this is set to true.
+    public: false
+    # How many pod replicas this Talkie Service should have.
+    replicas: 3
+    # By default, a k8s ServiceAccount is created for each Talkie Service. If 'serviceAccountName' is
+    # set, then it will be used instead and no ServiceAccount will be created automatically.
+    # TODO(f0rmiga): create a service account by default and implement this logic.
+    serviceAccountName: ~
+  <%- end %>

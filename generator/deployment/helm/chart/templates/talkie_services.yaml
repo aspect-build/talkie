@@ -1,0 +1,106 @@
+<%- /*
+# Copyright 2022 Aspect Build Systems Inc.
+# Original authors: Thulio Ferraz Assis (thulio@aspect.dev)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+*/ -%>
+
+<%- range $service := .services %>
+{{- with $service_config := (get $.Values.talkie_services <% $service.service_name | kebabcase | quote %>) }}
+{{- with $service_name := ($service_config.nameOverride | default <% $service.service_name | kebabcase | quote %>) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $service_name | quote }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "chart.labels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+spec:
+  replicas: {{ $service_config.replicas }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" (merge (dict "Name" ($service_name | quote)) $) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "chart.labels" (merge (dict "Name" ($service_name | quote)) $) | nindent 8 }}
+    spec:
+      {{- with $service_config.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ $service_name | quote }}
+        {{- if $service_config.image.registry }}
+        image: {{ printf "%s/%s:%s" $service_config.image.registry $service_config.image.repository $service_config.image.tag | quote }}
+        {{- else }}
+        image: {{ printf "%s:%s" $service_config.image.repository $service_config.image.tag | quote }}
+        {{- end }}
+        imagePullPolicy: {{ $service_config.image.pullPolicy }}
+        args:
+        - "-grpc-address=0.0.0.0:50051"
+        <%- if $service.enable_grpc_gateway %>
+        - "-http-address=0.0.0.0:8090"
+        <%- end %>
+        env:
+        - name: GRPC_DNS_RESOLVER
+          value: native
+        <%- range $client := $service.talks_to %>
+        - name: <% printf "%s_ADDRESS" ($client.service_name | kebabcase | upper) %>
+          value: <% printf "%s:50051" ($client.service_name | kebabcase) %>
+        <%- end %>
+        ports:
+        - containerPort: 50051
+          name: grpc
+        <%- if $service.enable_grpc_gateway %>
+        - containerPort: 8090
+          name: grpc-gateway
+        <%- end %>
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $service_name | quote }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "chart.labels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+spec:
+  selector:
+    {{- include "chart.selectorLabels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+  clusterIP: None
+  ports:
+  - name: grpc
+    protocol: TCP
+    port: 50051
+    targetPort: grpc
+  <%- if $service.enable_grpc_gateway %>
+  - name: grpc-gateway
+    protocol: TCP
+    port: 8090
+    targetPort: grpc-gateway
+  <%- end %>
+{{- end }}
+{{- end }}
+<%- end %>

@@ -1,0 +1,8 @@
+filegroup(
+    name = "chart",
+    srcs = glob(
+        include = ["**"],
+        exclude = ["BUILD.bazel"],
+    ),
+    visibility = ["//visibility:public"],
+)

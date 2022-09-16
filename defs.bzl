@@ -19,6 +19,7 @@
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("@bazel_gomock//:gomock.bzl", "gomock")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@io_bazel_rules_docker//container:bundle.bzl", "container_bundle")
 load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 load("@io_bazel_rules_go//go:def.bzl", "GoLibrary", "go_binary")
@@ -26,12 +27,14 @@ load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load("//generator/renderer:defs.bzl", "render")
 load("//generator/json/bazel_stamp:defs.bzl", "bazel_stamp_to_json")
 
+DEFAULT_VERSION_WORKSPACE_STATUS_KEY = "STABLE_TALKIE_RELEASE_VERSION"
+
 def talkie_service(
         name,
         base_image,
         service_definition,
         service_implementation,
-        image_tag_workspace_status_key = "STABLE_TALKIE_SERVICE_TAG",
+        version_workspace_status_key = DEFAULT_VERSION_WORKSPACE_STATUS_KEY,
         talks_to = [],
         container_repository = "",
         enable_grpc_gateway = False,
@@ -44,7 +47,7 @@ def talkie_service(
         base_image: The OCI base image used for the Talkie server.
         service_definition: The go_library containing the gRPC service definitions.
         service_implementation: The go_library containing the gRPC service implementation.
-        image_tag_workspace_status_key: The key used to extract the image tag from the Bazel workspace status.
+        version_workspace_status_key: The key used to extract the release version from the Bazel workspace status.
         talks_to: A list of other talkie_service targets this Talkie service can talk to.
         container_repository: A container repository to prefix the service images.
         enable_grpc_gateway: Enables gRPC Gateway (http proxy) for the service.
@@ -152,7 +155,7 @@ def talkie_service(
 
     container_bundle(
         name = image_target,
-        images = {"%s:{%s}" % (image_name, image_tag_workspace_status_key): image_alias_target},
+        images = {"%s:{%s}" % (image_name, version_workspace_status_key): image_alias_target},
         stamp = "@io_bazel_rules_docker//stamp:always",
     )
 
@@ -162,7 +165,7 @@ def talkie_service(
         enable_grpc_gateway = enable_grpc_gateway,
         image = image_target + ".tar",
         image_name = image_name,
-        image_tag_workspace_status_key = image_tag_workspace_status_key,
+        version_workspace_status_key = version_workspace_status_key,
         server = server_binary_target,
         talks_to = talks_to,
         visibility = visibility,
@@ -342,7 +345,7 @@ TalkieServiceInfo = provider(
         "client_source": "The client .go source file for connecting to the service.",
         "enable_grpc_gateway": "If a grpc gateway should be created for this service.",
         "image_name": "The image name (does not include the image repository or image tag).",
-        "image_tag_workspace_status_key": "The key used to extract the image tag from the Bazel workspace status.",
+        "version_workspace_status_key": "The key used to extract the release version from the Bazel workspace status.",
         "image_tar": "The image tarballs.",
         "service_name": "The service name.",
         "talks_to": "A list of Talkie client targets this service is allowed to communicate.",
@@ -371,7 +374,7 @@ def _talkie_service_impl(ctx):
         client_source = ctx.file.client_source,
         enable_grpc_gateway = ctx.attr.enable_grpc_gateway,
         image_name = ctx.attr.image_name,
-        image_tag_workspace_status_key = ctx.attr.image_tag_workspace_status_key,
+        version_workspace_status_key = ctx.attr.version_workspace_status_key,
         image_tar = ctx.file.image,
         service_name = ctx.attr.name,
         talks_to = [s[TalkieServiceClientInfo] for s in ctx.attr.talks_to],
@@ -404,8 +407,8 @@ _talkie_service = rule(
             doc = "The image name.",
             mandatory = False,
         ),
-        "image_tag_workspace_status_key": attr.string(
-            doc = "The key used to extract the image tag from the Bazel workspace status.",
+        "version_workspace_status_key": attr.string(
+            doc = "The key used to extract the release version from the Bazel workspace status.",
             mandatory = True,
         ),
         "server": attr.label(
@@ -470,20 +473,27 @@ def talkie_client_mock(name, service_definition, interfaces):
         visibility = ["//visibility:private"],
     )
 
-def talkie_deployment(name, services, container_registry = "", **kwargs):
+def talkie_deployment(
+        name,
+        services,
+        container_registry = "",
+        version_workspace_status_key = DEFAULT_VERSION_WORKSPACE_STATUS_KEY,
+        **kwargs):
     kind_load_images_output = name + "_kind_load_images.sh"
 
     _talkie_deployment(
         name = name,
         container_registry = container_registry,
-        k8s_manifest_output = name + "_deployment.yaml",
+        helm_chart_output = name + ".tgz",
         services = services,
+        version_workspace_status_key = version_workspace_status_key,
         **kwargs
     )
 
     _kind_load_images(
         name = name + ".kind_load_images",
         container_registry = container_registry,
+        deployment_name = name,
         kind_load_images_output = kind_load_images_output,
         services = services,
     )
@@ -500,18 +510,71 @@ def _talkie_deployment_impl(ctx):
         output = bazel_stamp_json,
     )
 
-    deployment_attributes = _deployment_attributes(ctx.attr.container_registry, ctx.attr.services)
+    deployment_attributes = _deployment_attributes(ctx.attr.name, ctx.attr.container_registry, ctx.attr.services)
     attributes_json = ctx.actions.declare_file("{}_attribues_stamping.json".format(ctx.attr.name))
     ctx.actions.write(attributes_json, json.encode(deployment_attributes))
+    attributes_files = [bazel_stamp_json, attributes_json]
 
-    render(
-        ctx,
-        template = ctx.file._k8s_manifest_template,
-        output = ctx.outputs.k8s_manifest_output,
-        attributes_files = [bazel_stamp_json, attributes_json],
-    )
-    outputs = depset([ctx.outputs.k8s_manifest_output])
+    build_chart_root = paths.join("build", "chart", ctx.attr.name)
+    rendered_files = _render_helm_chart(ctx, build_chart_root, attributes_files)
+    _build_helm_chart_archive(ctx, build_chart_root, rendered_files, bazel_stamp_files)
+
+    outputs = depset([ctx.outputs.helm_chart_output])
     return [DefaultInfo(files = outputs)]
+
+def _render_helm_chart(ctx, build_chart_root, attributes_files):
+    tmpl_pkg = ctx.attr._helm_chart_templates.label.package
+    tmpl_workspace_root = ctx.attr._helm_chart_templates.label.workspace_root
+    rendered_files = []
+    for tmpl in ctx.attr._helm_chart_templates.files.to_list():
+        rendered_path = paths.join(build_chart_root, paths.relativize(tmpl.path, paths.join(tmpl_workspace_root, tmpl_pkg)))
+        output = ctx.actions.declare_file(rendered_path)
+        render(
+            ctx,
+            template = tmpl,
+            output = output,
+            attributes_files = attributes_files,
+            template_open_delim = "<%",
+            template_close_delim = "%>",
+        )
+        rendered_files.append(output)
+    return rendered_files
+
+def _build_helm_chart_archive(ctx, build_chart_root, rendered_files, bazel_stamp_files):
+    ctx.actions.run_shell(
+        command = _build_helm_chart_archive_command.format(
+            bazel_stamp_files = " ".join(["'{}'".format(f.path) for f in bazel_stamp_files]),
+            build_chart_root = paths.join(ctx.bin_dir.path, paths.dirname(ctx.build_file_path), build_chart_root),
+            helm = ctx.executable._helm.path,
+            name = ctx.attr.name,
+            output = ctx.outputs.helm_chart_output.path,
+            version_workspace_status_key = ctx.attr.version_workspace_status_key,
+        ),
+        execution_requirements = {
+            "block-network": "1",
+        },
+        inputs = depset(rendered_files + bazel_stamp_files),
+        outputs = [ctx.outputs.helm_chart_output],
+        tools = [ctx.executable._helm],
+    )
+
+_build_helm_chart_archive_command = """\
+set -o errexit -o nounset -o pipefail
+
+version=$(cat {bazel_stamp_files} | grep '{version_workspace_status_key}' | awk '{{ print $2 }}')
+readonly version
+
+readonly chart_output="chart_output"
+
+"{helm}" package "{build_chart_root}" \
+    --version=${{version}} \
+    --app-version=${{version}} \
+    --destination="${{chart_output}}" \
+    1> >(grep --invert-match 'Successfully packaged chart') \
+    2> >(grep --invert-match 'found symbolic link in path')
+
+mv "${{chart_output}}"/*.tgz "{output}"
+"""
 
 _DEPLOYMENT_ATTRS = {
     "container_registry": attr.string(
@@ -539,14 +602,22 @@ _DEPLOYMENT_ATTRS = {
 _talkie_deployment = rule(
     _talkie_deployment_impl,
     attrs = dict(dict({
-        "k8s_manifest_output": attr.output(
-            doc = "The Kubernetes deployment manifest output .yaml file.",
+        "helm_chart_output": attr.output(
+            doc = "The Helm chart release tarball.",
             mandatory = True,
         ),
-        "_k8s_manifest_template": attr.label(
-            allow_single_file = True,
-            default = Label("//generator/deployment:k8s_manifest_tmpl"),
-            doc = "The Kubernetes deployment manifest template file used for each Talkie service.",
+        "version_workspace_status_key": attr.string(
+            doc = "The key used to extract the release version from the Bazel workspace status.",
+            mandatory = True,
+        ),
+        "_helm_chart_templates": attr.label(
+            default = Label("//generator/deployment/helm/chart"),
+            doc = "The Helm chart templates. It's a bit of an inception as there are 2 levels of templates. The final tarball still contains regular Helm templates.",
+        ),
+        "_helm": attr.label(
+            cfg = "exec",
+            default = Label("@sh_helm_helm_v3//cmd/helm"),
+            executable = True,
         ),
     }).items() + _DEPLOYMENT_ATTRS.items()),
 )
@@ -559,7 +630,7 @@ def _kind_load_images_impl(ctx):
     for service in ctx.attr.services:
         images.append(service[TalkieServiceInfo].image_tar)
 
-    deployment_attributes = _deployment_attributes(ctx.attr.container_registry, ctx.attr.services)
+    deployment_attributes = _deployment_attributes(ctx.attr.deployment_name, ctx.attr.container_registry, ctx.attr.services)
     kind_attributes = dict({"kind": ctx.executable._kind.short_path})
     attributes = dict(deployment_attributes.items() + kind_attributes.items())
 
@@ -585,6 +656,10 @@ def _kind_load_images_impl(ctx):
 _kind_load_images = rule(
     _kind_load_images_impl,
     attrs = dict(dict({
+        "deployment_name": attr.string(
+            doc = "The name of the talkie_deployment target.",
+            mandatory = True,
+        ),
         "kind_load_images_output": attr.output(
             doc = "The output .sh script to load images into Kubernetes-in-Docker (kind).",
             mandatory = True,
@@ -614,15 +689,16 @@ def _validate_services(services):
         unique[name] = None
     return True
 
-def _deployment_attributes(container_registry, services):
+def _deployment_attributes(name, container_registry, services):
     return dict({
+        "name": name,
         "container_registry": container_registry,
         "services": [
             struct(
                 enable_grpc_gateway = service[TalkieServiceInfo].enable_grpc_gateway,
                 image_tar = service[TalkieServiceInfo].image_tar.short_path,
                 image_name = service[TalkieServiceInfo].image_name,
-                image_tag_workspace_status_key = service[TalkieServiceInfo].image_tag_workspace_status_key,
+                version_workspace_status_key = service[TalkieServiceInfo].version_workspace_status_key,
                 service_name = service[TalkieServiceInfo].service_name,
                 talks_to = service[TalkieServiceInfo].talks_to,
             )
