@@ -231,7 +231,8 @@ func talkieClients(ctx context.Context) (map[string]interface{}, error) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 		defer cancel()
 		log.Infof("connecting to the {{ $client.service_name }} Service at %s", {{ $client.service_name | lower }}Address)
-		{{ $client.service_name | lower }} := {{ $client.service_name | lower }}.New{{ $client.service_name }}()
+		const loadBalance = true
+		{{ $client.service_name | lower }} := {{ $client.service_name | lower }}.New{{ $client.service_name }}(loadBalance)
 		if err := {{ $client.service_name | lower }}.Connect(ctx, {{ $client.service_name | lower }}Address); err != nil {
 			return fmt.Errorf("failed to connect to the {{ $client.service_name }} Service: %w", err)
 		}
@@ -241,7 +242,9 @@ func talkieClients(ctx context.Context) (map[string]interface{}, error) {
 	}
 	if err := retry.Do(
 		connectTo{{ $client.service_name }},
-		retry.Attempts(5),
+		// Retry connection 10 times, waiting 3 seconds between each retry.
+		retry.Attempts(10),
+		retry.Delay(time.Second*3),
 	); err != nil {
 		return nil, fmt.Errorf("failed to initialize service: %w", err)
 	}

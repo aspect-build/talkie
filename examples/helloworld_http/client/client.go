@@ -22,7 +22,9 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/resolver"
 
 	pb "github.com/aspect-build/talkie/examples/helloworld_http/protos"
 )
@@ -36,18 +38,20 @@ type Greeter interface {
 }
 
 // NewGreeter constructs a Greeter.
-func NewGreeter() Greeter {
-	return &greeter{}
+func NewGreeter(loadBalance bool) Greeter {
+	return &greeter{
+		loadBalance: loadBalance,
+	}
 }
 
 type greeter struct {
 	conn   *grpc.ClientConn
 	client pb.GreeterClient
+
+	loadBalance bool
 }
 
 var defaultOptions = []grpc.DialOption{
-	// The connection to the server is a blocking call.
-	grpc.WithBlock(),
 	// TODO(f0rmiga): do proper mTLS.
 	grpc.WithTransportCredentials(insecure.NewCredentials()),
 }
@@ -55,6 +59,10 @@ var defaultOptions = []grpc.DialOption{
 // Connect connects to the Greeter service.
 func (c *greeter) Connect(ctx context.Context, serverAddr string, extraOpts ...grpc.DialOption) error {
 	opts := append(defaultOptions, extraOpts...)
+	if c.loadBalance {
+		opts = append(opts, grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingPolicy":"%s"}`, roundrobin.Name)))
+		resolver.SetDefaultScheme("dns")
+	}
 	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to connect to Greeter: %w", err)

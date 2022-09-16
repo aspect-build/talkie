@@ -22,7 +22,9 @@ import (
 	"fmt"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/resolver"
 
 	pb "{{ .service_definition }}"
 )
@@ -37,18 +39,20 @@ type {{ $service.Name }} interface {
 }
 
 // New{{ $service.Name }} constructs a {{ $service.Name }}.
-func New{{ $service.Name }}() {{ $service.Name }} {
-	return &{{ $service.Name | lower }}{}
+func New{{ $service.Name }}(loadBalance bool) {{ $service.Name }} {
+	return &{{ $service.Name | lower }}{
+		loadBalance: loadBalance,
+	}
 }
 
 type {{ $service.Name | lower }} struct {
 	conn *grpc.ClientConn
 	client pb.{{ $service.Name }}Client
+
+	loadBalance bool
 }
 
 var defaultOptions = []grpc.DialOption{
-	// The connection to the server is a blocking call.
-	grpc.WithBlock(),
 	// TODO(f0rmiga): do proper mTLS.
 	grpc.WithTransportCredentials(insecure.NewCredentials()),
 }
@@ -56,6 +60,10 @@ var defaultOptions = []grpc.DialOption{
 // Connect connects to the {{ $service.Name }} service.
 func (c *{{ $service.Name | lower }}) Connect(ctx context.Context, serverAddr string, extraOpts ...grpc.DialOption) error {
 	opts := append(defaultOptions, extraOpts...)
+	if c.loadBalance {
+		opts = append(opts, grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"loadBalancingPolicy":"%s"}`, roundrobin.Name)))
+		resolver.SetDefaultScheme("dns")
+	}
 	conn, err := grpc.DialContext(ctx, serverAddr, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to connect to {{ $service.Name }}: %w", err)

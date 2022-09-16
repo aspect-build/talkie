@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
+	"google.golang.org/grpc"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -75,8 +76,8 @@ var _ = Describe("Helloworld", func() {
 			It("Should reply with a message containing the caller name", func() {
 				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 				defer cancel()
-				greeter := helloworld.NewGreeter()
-				err := greeter.Connect(ctx, address)
+				greeter := helloworld.NewGreeter(false)
+				err := greeter.Connect(ctx, address, grpc.WithBlock())
 				Expect(err).ToNot(HaveOccurred())
 				defer greeter.Disconnect()
 				reply, err := greeter.Client().SayHello(ctx, &pb.HelloRequest{Name: "John"})
