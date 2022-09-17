@@ -20,5 +20,5 @@
 set -o errexit -o nounset -o pipefail
 
 {{- range $service := .services }}
-"{{ $.kind }}" load image-archive "{{ $service.image_tar }}"
+"{{ $.kind }}" load image-archive "{{ $service.image_tar }}" "$@"
 {{- end }}

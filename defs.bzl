@@ -478,6 +478,7 @@ def talkie_deployment(
         services,
         container_registry = "",
         version_workspace_status_key = DEFAULT_VERSION_WORKSPACE_STATUS_KEY,
+        visibility = None,
         **kwargs):
     kind_load_images_output = name + "_kind_load_images.sh"
 
@@ -487,6 +488,7 @@ def talkie_deployment(
         helm_chart_output = name + ".tgz",
         services = services,
         version_workspace_status_key = version_workspace_status_key,
+        visibility = visibility,
         **kwargs
     )
 
@@ -496,6 +498,7 @@ def talkie_deployment(
         deployment_name = name,
         kind_load_images_output = kind_load_images_output,
         services = services,
+        visibility = visibility,
     )
 
 def _talkie_deployment_impl(ctx):
