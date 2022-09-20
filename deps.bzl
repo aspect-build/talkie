@@ -1,6 +1,7 @@
 """This module contains the project repository dependencies.
 """
 
+load("//infrastructure/build:deps.bzl", "build_dependencies")
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
@@ -82,6 +83,9 @@ def talkie_dependencies():
             "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64",
         ],
     )
+
+def talkie_build_dependencies(kubectl_version = None):
+    build_dependencies(kubectl_version)
 
 def go_dependencies():
     """The Go dependencies.

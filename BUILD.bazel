@@ -20,3 +20,8 @@ sh_binary(
     name = "tidy",
     srcs = ["tidy.sh"],
 )
+
+alias(
+    name = "go",
+    actual = "@go_sdk//:bin/go",
+)
