@@ -38,7 +38,6 @@ talkie_services:
     # If 'nameOverride' is set, then it replaces all instances of <% $service.service_name | kebabcase %>.
     nameOverride: ~
     # Whether this Talkie Service should get a public IP via a LoadBalancer k8s Service type.
-    # TODO(f0rmiga): create public services with LoadBalancers when this is set to true.
     public: false
     # How many pod replicas this Talkie Service should have.
     replicas: 3

@@ -109,6 +109,31 @@ spec:
     port: 8090
     targetPort: grpc-gateway
   <%- end %>
+{{- if $service_config.public }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-public" $service_name | quote }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "chart.labels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+spec:
+  selector:
+    {{- include "chart.selectorLabels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+  type: LoadBalancer
+  ports:
+  - name: grpc
+    protocol: TCP
+    port: 50051
+    targetPort: grpc
+  <%- if $service.enable_grpc_gateway %>
+  - name: grpc-gateway
+    protocol: TCP
+    port: 8090
+    targetPort: grpc-gateway
+  <%- end %>
+{{- end }}
 {{- end }}
 {{- end }}
 <%- end %>
