@@ -34,6 +34,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 
 	{{- if .enable_grpc_gateway }}
 	"errors"
@@ -146,6 +148,8 @@ func main() {
 {{- range $service := .services }}
 	pb.Register{{ $service.Name }}Server(grpcServer, impl{{ $service.Name }})
 {{- end}}
+
+	grpc_health_v1.RegisterHealthServer(grpcServer, health.NewServer())
 
 	serveErrors := make(chan error, 1)
 

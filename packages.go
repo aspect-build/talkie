@@ -18,6 +18,7 @@ package talkie
 import (
 	_ "github.com/avast/retry-go/v4"
 	_ "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	_ "github.com/grpc-ecosystem/grpc-health-probe"
 	_ "github.com/sirupsen/logrus"
 	_ "google.golang.org/grpc"
 	_ "helm.sh/helm/v3/cmd/helm"

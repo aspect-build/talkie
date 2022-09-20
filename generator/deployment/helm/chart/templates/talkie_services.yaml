@@ -67,6 +67,14 @@ spec:
         - containerPort: 8090
           name: grpc-gateway
         <%- end %>
+        readinessProbe:
+          exec:
+            command: ["/usr/local/bin/grpc-health-probe", "-addr=:50051"]
+          initialDelaySeconds: 5
+        livenessProbe:
+          exec:
+            command: ["/usr/local/bin/grpc-health-probe", "-addr=:50051"]
+          initialDelaySeconds: 10
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

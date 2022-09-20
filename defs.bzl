@@ -77,6 +77,8 @@ def talkie_service(
         "@com_github_avast_retry_go_v4//:retry-go",
         "@com_github_sirupsen_logrus//:logrus",
         "@org_golang_google_grpc//:grpc",
+        "@org_golang_google_grpc//health",
+        "@org_golang_google_grpc//health/grpc_health_v1",
         service_definition,
         service_implementation,
     ] + talks_to
@@ -110,11 +112,20 @@ def talkie_service(
         transition_tar_target = "{name}_transition_{arch}_tar".format(name = name, arch = arch)
         dumb_init_path = "/usr/local/bin/dumb-init"
         service_binary_path = "/usr/local/bin/" + name
+        grpc_health_probe_transition_target = "{name}_grpc_health_probe_transition_{arch}".format(name = name, arch = arch)
+        platform_transition_filegroup(
+            name = grpc_health_probe_transition_target,
+            srcs = ["@com_github_grpc_ecosystem_grpc_health_probe//:grpc-health-probe"],
+            tags = ["manual"],
+            target_platform = "@aspect_talkie//platforms:linux_" + arch,
+        )
+        grpc_health_probe_path = "/usr/local/bin/grpc-health-probe"
         pkg_tar(
             name = transition_tar_target,
             files = {
                 transition_target: service_binary_path,
                 "@dumb_init_{}//file".format(arch): dumb_init_path,
+                grpc_health_probe_transition_target: grpc_health_probe_path,
             },
             include_runfiles = True,
             strip_prefix = "/",
