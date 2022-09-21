@@ -94,8 +94,6 @@ def talkie_service(
         name = server_binary_target,
         srcs = [server_output],
         deps = server_deps,
-        pure = "on",
-        static = "on",
         tags = tags,
         visibility = visibility,
     )
