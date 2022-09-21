@@ -4,10 +4,9 @@ set -o errexit -o nounset -o pipefail
 
 git_commit=$(git rev-parse HEAD)
 readonly git_commit
-version=$(
-    git describe --tags --long --match="[0-9][0-9][0-9][0-9].[0-9][0-9]" \
-        | sed -e 's/-/./;s/-g/-/'
-)
+
+# Semver compatible git describe: https://github.com/choffmeister/git-describe-semver
+version=$(cd ../.. && ./tools/git-describe-semver --fallback v0.0.0)
 readonly version
 
 cat << EOF
