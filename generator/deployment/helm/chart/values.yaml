@@ -37,8 +37,14 @@ talkie_services:
       tag: <% (get $.workspace_status $service.version_workspace_status_key) | quote %>
     # If 'nameOverride' is set, then it replaces all instances of <% $service.service_name | kebabcase %>.
     nameOverride: ~
-    # Whether this Talkie Service should get a public IP via a LoadBalancer k8s Service type.
-    public: false
+    # The public k8s Service configuration.
+    public:
+      # Whether this Talkie Service should get a public IP via a LoadBalancer k8s Service type.
+      enabled: false
+      # If set, override the automatic assigned clusterIP.
+      clusterIP: ~
+      # If set, override the automatic assigned loadBalancerIP.
+      loadBalancerIP: ~
     # How many pod replicas this Talkie Service should have.
     replicas: 3
     # By default, a k8s ServiceAccount is created for each Talkie Service. If 'serviceAccountName' is

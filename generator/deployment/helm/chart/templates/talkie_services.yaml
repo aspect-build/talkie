@@ -109,7 +109,7 @@ spec:
     port: 8090
     targetPort: grpc-gateway
   <%- end %>
-{{- if $service_config.public }}
+{{- if $service_config.public.enabled }}
 ---
 apiVersion: v1
 kind: Service
@@ -122,6 +122,12 @@ spec:
   selector:
     {{- include "chart.selectorLabels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
   type: LoadBalancer
+  {{- if $service_config.public.clusterIP }}
+  clusterIP: {{ $service_config.public.clusterIP | quote }}
+  {{- end }}
+  {{- if $service_config.public.loadBalancerIP }}
+  loadBalancerIP: {{ $service_config.public.loadBalancerIP | quote }}
+  {{- end }}
   ports:
   - name: grpc
     protocol: TCP

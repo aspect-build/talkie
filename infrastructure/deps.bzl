@@ -7,6 +7,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 def infrastructure_dependencies():
     _dumb_init()
     _kubectl()
+    _metallb()
 
 def _dumb_init():
     maybe(
@@ -54,4 +55,13 @@ def _kubectl():
         executable = True,
         sha256 = "e23cc7092218c95c22d8ee36fb9499194a36ac5b5349ca476886b7edc0203885",
         url = "https://dl.k8s.io/release/v1.25.0/bin/linux/amd64/kubectl",
+    )
+
+def _metallb():
+    maybe(
+        http_file,
+        name = "metallb_native_manifest",
+        downloaded_file_path = "metallb-native.yaml",
+        sha256 = "b477af38dd34ab127fbec905ec1db4ff537bfd3c1490b1d6eed833486576808f",
+        url = "https://raw.githubusercontent.com/metallb/metallb/v0.13.5/config/manifests/metallb-native.yaml",
     )
