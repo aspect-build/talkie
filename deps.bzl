@@ -1,9 +1,9 @@
 """This module contains the project repository dependencies.
 """
 
-load("//infrastructure/build:deps.bzl", "build_dependencies")
+load("//infrastructure:deps.bzl", "infrastructure_dependencies")
 load("@bazel_gazelle//:deps.bzl", "go_repository")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 def talkie_dependencies():
@@ -63,29 +63,8 @@ def talkie_dependencies():
             "https://github.com/jmhodges/bazel_gomock/archive/refs/tags/v1.3.tar.gz",
         ],
     )
-    maybe(
-        http_file,
-        name = "dumb_init_aarch64",
-        downloaded_file_path = "dumb-init",
-        executable = True,
-        sha256 = "b7d648f97154a99c539b63c55979cd29f005f88430fb383007fe3458340b795e",
-        urls = [
-            "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_aarch64",
-        ],
-    )
-    maybe(
-        http_file,
-        name = "dumb_init_x86_64",
-        downloaded_file_path = "dumb-init",
-        executable = True,
-        sha256 = "e874b55f3279ca41415d290c512a7ba9d08f98041b28ae7c2acb19a545f1c4df",
-        urls = [
-            "https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64",
-        ],
-    )
 
-def talkie_build_dependencies(kubectl_version = None):
-    build_dependencies(kubectl_version)
+    infrastructure_dependencies()
 
 def go_dependencies():
     """The Go dependencies.

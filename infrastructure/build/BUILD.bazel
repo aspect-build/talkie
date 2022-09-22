@@ -1,9 +1,0 @@
-alias(
-    name = "kubectl_binary",
-    actual = select({
-        "//platforms/config:macos_aarch64": "@kubectl_macos_aarch64//file:downloaded",
-        "//platforms/config:macos_x86_64": "@kubectl_macos_x86_64//file:downloaded",
-        "//platforms/config:linux_x86_64": "@kubectl_linux_x86_64//file:downloaded",
-    }),
-    visibility = ["//infrastructure:__pkg__"],
-)

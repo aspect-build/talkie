@@ -74,11 +74,9 @@ http_archive(
     ],
 )
 
-load("//:deps.bzl", "go_dependencies", "talkie_build_dependencies", "talkie_dependencies")
+load("//:deps.bzl", "go_dependencies", "talkie_dependencies")
 
 talkie_dependencies()
-
-talkie_build_dependencies()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
