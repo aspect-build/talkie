@@ -1,4 +1,4 @@
-// Copyright 2022 Aspect Build Systems Inc.
+// Copyright 2022 Aspect Build Systems, Inc. All rights reserved.
 // Original authors: Dylan Martin (dylan@aspect.dev)
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
