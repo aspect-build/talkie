@@ -7,7 +7,7 @@ require (
 	github.com/avast/retry-go/v4 v4.1.0
 	github.com/emicklei/proto v1.11.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.3
-	github.com/grpc-ecosystem/grpc-health-probe v0.4.12
+	github.com/grpc-ecosystem/grpc-health-probe v0.4.13
 	github.com/imdario/mergo v0.3.13
 	github.com/sirupsen/logrus v1.9.0
 	google.golang.org/grpc v1.49.0

@@ -1167,8 +1167,8 @@ def go_dependencies():
         build_external = "external",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/grpc-ecosystem/grpc-health-probe",
-        sum = "h1:fbOWu7GZOeFgPkXMg2DELU1PLMnIIGV7f9AXR5gmiXk=",
-        version = "v0.4.12",
+        sum = "h1:Eo8zcfJaqNYfvkIh2+srxuZCzjomJiJFwunPmeR8cJk=",
+        version = "v0.4.13",
     )
     go_repository(
         name = "com_github_hashicorp_consul_api",
