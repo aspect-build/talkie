@@ -6,7 +6,7 @@ git_commit=$(git rev-parse HEAD)
 readonly git_commit
 
 # Semver compatible git describe: https://github.com/choffmeister/git-describe-semver
-version=$(cd ../.. && ./tools/git-describe-semver --fallback v0.0.0)
+version=$(cd ../.. && ./bazel/versioning/git-describe-semver --fallback v0.0.0)
 readonly version
 
 cat << EOF
