@@ -10,7 +10,7 @@ require (
 	github.com/grpc-ecosystem/grpc-health-probe v0.4.13
 	github.com/imdario/mergo v0.3.13
 	github.com/sirupsen/logrus v1.9.0
-	google.golang.org/grpc v1.49.0
+	google.golang.org/grpc v1.50.0
 	helm.sh/helm/v3 v3.10.0
 	sigs.k8s.io/kind v0.16.0
 )
