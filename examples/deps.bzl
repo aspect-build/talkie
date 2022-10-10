@@ -444,8 +444,8 @@ def go_dependencies():
         name = "com_github_grpc_ecosystem_grpc_health_probe",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/grpc-ecosystem/grpc-health-probe",
-        sum = "h1:fbOWu7GZOeFgPkXMg2DELU1PLMnIIGV7f9AXR5gmiXk=",
-        version = "v0.4.12",
+        sum = "h1:Eo8zcfJaqNYfvkIh2+srxuZCzjomJiJFwunPmeR8cJk=",
+        version = "v0.4.13",
     )
     go_repository(
         name = "com_github_huandu_xstrings",
@@ -1081,8 +1081,8 @@ def go_dependencies():
         name = "org_golang_google_grpc",
         build_file_proto_mode = "disable_global",
         importpath = "google.golang.org/grpc",
-        sum = "h1:WTLtQzmQori5FUH25Pq4WT22oCsv8USpQ+F6rqtsmxw=",
-        version = "v1.49.0",
+        sum = "h1:fPVVDxY9w++VjTZsYvXWqEf9Rqar/e+9zYfxKK+W+YU=",
+        version = "v1.50.0",
     )
     go_repository(
         name = "org_golang_google_protobuf",
