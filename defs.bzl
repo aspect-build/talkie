@@ -164,7 +164,7 @@ def talkie_service(
 
     container_bundle(
         name = image_target,
-        images = {"%s:{%s}" % (image_name, version_workspace_status_key): image_alias_target},
+        images = {"%s:v{%s}" % (image_name, version_workspace_status_key): image_alias_target},
         stamp = "@io_bazel_rules_docker//stamp:always",
     )
 
