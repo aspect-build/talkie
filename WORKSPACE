@@ -29,9 +29,9 @@ http_archive(
     name = "com_grail_bazel_toolchain",
     patch_args = ["-p1"],
     patches = ["//patches:com_grail_bazel_toolchain.patch"],
-    sha256 = "8b9998b0e52fa90e5e5df8580770b6e37aac16c71ee6fb95bec9c8eba9f8acbe",
-    strip_prefix = "bazel-toolchain-649b941afe7388b7304c497cbaf43ed818c9e609",
-    urls = ["https://github.com/grailbio/bazel-toolchain/archive/649b941afe7388b7304c497cbaf43ed818c9e609.tar.gz"],
+    sha256 = "df5cb9a0a2bdcbaedbfc5cc1c1ceded6fdfd875c42afd5d8ab8ef286f655dc44",
+    strip_prefix = "bazel-toolchain-bfd8b16ad689bd8f54949504035f489808cfed40",
+    urls = ["https://github.com/grailbio/bazel-toolchain/archive/bfd8b16ad689bd8f54949504035f489808cfed40.tar.gz"],
 )
 
 load("@com_grail_bazel_toolchain//toolchain:deps.bzl", "bazel_toolchain_dependencies")
