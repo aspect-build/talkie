@@ -28,12 +28,14 @@ load("//generator/renderer:defs.bzl", "render")
 load("//generator/json/bazel_stamp:defs.bzl", "bazel_stamp_to_json")
 
 DEFAULT_VERSION_WORKSPACE_STATUS_KEY = "STABLE_TALKIE_RELEASE_VERSION"
+SECRETS_MOUNT_PATH = "/var/talkie/secrets"
 
 def talkie_service(
         name,
         base_image,
         service_definition,
         service_implementation,
+        secrets = [],
         version_workspace_status_key = DEFAULT_VERSION_WORKSPACE_STATUS_KEY,
         talks_to = [],
         container_repository = "",
@@ -47,6 +49,8 @@ def talkie_service(
         base_image: The OCI base image used for the Talkie server.
         service_definition: The go_library containing the gRPC service definitions.
         service_implementation: The go_library containing the gRPC service implementation.
+        secrets: A list of secrets. E.g. 'redis.username' and 'redis.password' would become
+        '{"redis":{"username", "password"}}' under Helm values.
         version_workspace_status_key: The key used to extract the release version from the Bazel workspace status.
         talks_to: A list of other talkie_service targets this Talkie service can talk to.
         container_repository: A container repository to prefix the service images.
@@ -74,6 +78,7 @@ def talkie_service(
         "@aspect_talkie//service",
         "@aspect_talkie//service/client",
         "@aspect_talkie//service/logger",
+        "@aspect_talkie//service/secrets",
         "@com_github_avast_retry_go_v4//:retry-go",
         "@com_github_sirupsen_logrus//:logrus",
         "@org_golang_google_grpc//:grpc",
@@ -175,6 +180,7 @@ def talkie_service(
         image = image_target + ".tar",
         image_name = image_name,
         version_workspace_status_key = version_workspace_status_key,
+        secrets = secrets,
         server = server_binary_target,
         talks_to = talks_to,
         visibility = visibility,
@@ -354,10 +360,12 @@ TalkieServiceInfo = provider(
         "client_source": "The client .go source file for connecting to the service.",
         "enable_grpc_gateway": "If a grpc gateway should be created for this service.",
         "image_name": "The image name (does not include the image repository or image tag).",
-        "version_workspace_status_key": "The key used to extract the release version from the Bazel workspace status.",
         "image_tar": "The image tarballs.",
+        "secrets": "A list of secrets. E.g. 'redis.username' and 'redis.password' would become" +
+                   "'{\"redis\":{\"username\", \"password\"}}' under Helm values.",
         "service_name": "The service name.",
         "talks_to": "A list of Talkie client targets this service is allowed to communicate.",
+        "version_workspace_status_key": "The key used to extract the release version from the Bazel workspace status.",
     },
 )
 
@@ -376,6 +384,8 @@ def _talkie_service_impl(ctx):
         runfiles = server_default_info.default_runfiles,
     )
 
+    secrets = sorted(ctx.attr.secrets)
+
     # In addition to the DefaultInfo, return a TalkieServiceInfo that is used by
     # the deployment rules and any other rules that may want more information
     # about this Talkie service.
@@ -383,16 +393,52 @@ def _talkie_service_impl(ctx):
         client_source = ctx.file.client_source,
         enable_grpc_gateway = ctx.attr.enable_grpc_gateway,
         image_name = ctx.attr.image_name,
-        version_workspace_status_key = ctx.attr.version_workspace_status_key,
         image_tar = ctx.file.image,
+        secrets = struct(
+            parsed = _parse_secrets(secrets),
+            unparsed = secrets,
+        ),
         service_name = ctx.attr.name,
         talks_to = [s[TalkieServiceClientInfo] for s in ctx.attr.talks_to],
+        version_workspace_status_key = ctx.attr.version_workspace_status_key,
     )
 
     return [
         default_info,
         talkie_service_info,
     ]
+
+def _parse_secrets(secrets):
+    parsed = {}
+
+    # Secrets must be sorted so that the 'same prefix' validation is correct. If
+    # the secrets are not sorted, then 'if index == len(parts)-1:' would always
+    # override parts of the secrets mapping. A check could happen there, but
+    # tracking which secret it collides becomes hard to be able to feedback the
+    # user more accurately.
+    for secret in sorted(secrets):
+        parts = secret.split(".")
+        current = parsed
+        for index, part in enumerate(parts):
+            if not _validate_secret_part(part):
+                fail("the secret '{}' must not be empty and only contain letters, numbers or underscores".format(secret))
+            if index == len(parts) - 1:
+                current[part] = None
+                break
+            if not part in current:
+                current[part] = {}
+            elif current[part] == None:
+                fail("could not parse '{}' - the secret '{}' was already set".format(secret, ".".join(parts[:index + 1])))
+            current = current[part]
+    return parsed
+
+def _validate_secret_part(part):
+    if part == "":
+        return False
+    for c in range(0, len(part)):
+        if not part[c] in "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_":
+            return False
+    return True
 
 _talkie_service = rule(
     _talkie_service_impl,
@@ -419,6 +465,12 @@ _talkie_service = rule(
         "version_workspace_status_key": attr.string(
             doc = "The key used to extract the release version from the Bazel workspace status.",
             mandatory = True,
+        ),
+        "secrets": attr.string_list(
+            default = [],
+            doc = "A list of secrets. E.g. 'redis.username' and 'redis.password' would become" +
+                  "'{\"redis\":{\"username\", \"password\"}}' under Helm values.",
+            mandatory = False,
         ),
         "server": attr.label(
             doc = "The go_binary for the Talkie server.",
@@ -703,16 +755,18 @@ def _validate_services(services):
 
 def _deployment_attributes(name, container_registry, services):
     return dict({
-        "name": name,
         "container_registry": container_registry,
+        "name": name,
+        "secrets_mount_path": SECRETS_MOUNT_PATH,
         "services": [
             struct(
                 enable_grpc_gateway = service[TalkieServiceInfo].enable_grpc_gateway,
-                image_tar = service[TalkieServiceInfo].image_tar.short_path,
                 image_name = service[TalkieServiceInfo].image_name,
-                version_workspace_status_key = service[TalkieServiceInfo].version_workspace_status_key,
+                image_tar = service[TalkieServiceInfo].image_tar.short_path,
+                secrets = service[TalkieServiceInfo].secrets,
                 service_name = service[TalkieServiceInfo].service_name,
                 talks_to = service[TalkieServiceInfo].talks_to,
+                version_workspace_status_key = service[TalkieServiceInfo].version_workspace_status_key,
             )
             for service in services
         ],

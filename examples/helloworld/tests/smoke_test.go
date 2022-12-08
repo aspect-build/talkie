@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 
@@ -48,9 +49,11 @@ var _ = BeforeSuite(func() {
 	_, err = os.Stat(server)
 	Expect(err).ToNot(HaveOccurred())
 
+	secretsDir := path.Join(os.Getenv("TEST_SRCDIR"), "aspect_talkie_examples", "helloworld", "tests", "testdata", "secrets")
+
 	port++
 	address = fmt.Sprintf("127.0.0.1:%d", port)
-	cmd = exec.Command(server, "-grpc-address", address)
+	cmd = exec.Command(server, "-secrets-dir", secretsDir, "-grpc-address", address)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err = cmd.Start()
@@ -67,6 +70,7 @@ var _ = AfterSuite(func() {
 	Expect(stdout.String()).To(BeEmpty())
 	stderrStr := stderr.String()
 	Expect(stderrStr).To(ContainSubstring("called BeforeStart"))
+	Expect(stderrStr).To(ContainSubstring("redis://127.0.0.1:6379"))
 	Expect(stderrStr).To(ContainSubstring("called SayHello: John"))
 	Expect(stderrStr).To(ContainSubstring("called BeforeExit"))
 })

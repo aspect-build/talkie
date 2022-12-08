@@ -49,6 +49,7 @@ import (
 
 	"github.com/aspect-build/talkie/service/client"
 	"github.com/aspect-build/talkie/service/logger"
+	"github.com/aspect-build/talkie/service/secrets"
 	"github.com/aspect-build/talkie/service"
 
 	pb "{{ .service_definition }}"
@@ -62,6 +63,7 @@ import (
 	{{- end}}
 )
 
+var secretsDir string
 var grpcAddressFlag string
 var logLevelFlag string
 var httpAddressFlag string
@@ -69,6 +71,7 @@ var httpAddressFlag string
 var log logger.Logger
 
 func init() {
+	flag.StringVar(&secretsDir, "secrets-dir", "", "The root directory containing the secrets files.")
 	flag.StringVar(&grpcAddressFlag, "grpc-address", "0.0.0.0:50051", "The address for the gRPC server, including port, to listen.")
 	flag.StringVar(&logLevelFlag, "log-level", "info", "The log level (panic, fatal, error, warn, info, debug, trace).")
 	flag.StringVar(&httpAddressFlag, "http-address", "0.0.0.0:8090", "The address for the HTTP server, including port, to listen. Only used if --enable_grpc_gateway is set to true.")
@@ -79,6 +82,10 @@ func init() {
 
 func main() {
 	ctx := context.Background()
+
+	if secretsDir != "" {
+		secrets.SetSecretsDir(secretsDir)
+	}
 
 	hasErrors := false
 	defer func() {

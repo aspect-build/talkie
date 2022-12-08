@@ -30,6 +30,7 @@ import (
 
 	sprig "github.com/Masterminds/sprig/v3"
 	"github.com/imdario/mergo"
+	"sigs.k8s.io/yaml"
 )
 
 type stringListFlags []string
@@ -120,6 +121,12 @@ func (*Renderer) Render(
 		Option("missingkey=error"). // If a key is missing when rendering, return an error.
 		Delims(customDelims.open, customDelims.close).
 		Funcs(sprig.HermeticTxtFuncMap()).
+		Funcs(template.FuncMap{
+			"toYaml": func(o interface{}) string {
+				b, _ := yaml.Marshal(o)
+				return strings.TrimSpace(string(b))
+			},
+		}).
 		ParseFiles(templateFilename)
 	if err != nil {
 		return fmt.Errorf("failed to render template: %w", err)

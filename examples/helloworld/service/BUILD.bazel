@@ -8,5 +8,6 @@ go_library(
     deps = [
         "//helloworld/protos",
         "@aspect_talkie//service",
+        "@aspect_talkie//service/secrets",
     ],
 )

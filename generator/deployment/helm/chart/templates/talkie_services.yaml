@@ -16,32 +16,33 @@
 */ -%>
 
 <%- range $service := .services %>
-{{- with $service_config := (get $.Values.talkie_services <% $service.service_name | kebabcase | quote %>) }}
-{{- with $service_name := ($service_config.nameOverride | default <% $service.service_name | kebabcase | quote %>) }}
+<%- with $service_name := ($service.service_name | snakecase) %>
+{{- with $service_config := (get $.Values.talkie_services <% $service_name | quote %>) }}
+{{- with $k8s_service_name := ($service_config.nameOverride | default <% $service_name | kebabcase | quote %>) }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $service_name | quote }}
+  name: {{ $k8s_service_name | quote }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "chart.labels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+    {{- include "chart.labels" (merge (dict "Name" ($k8s_service_name | quote)) $) | nindent 4 }}
 spec:
   replicas: {{ $service_config.replicas }}
   selector:
     matchLabels:
-      {{- include "chart.selectorLabels" (merge (dict "Name" ($service_name | quote)) $) | nindent 6 }}
+      {{- include "chart.selectorLabels" (merge (dict "Name" ($k8s_service_name | quote)) $) | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "chart.labels" (merge (dict "Name" ($service_name | quote)) $) | nindent 8 }}
+        {{- include "chart.labels" (merge (dict "Name" ($k8s_service_name | quote)) $) | nindent 8 }}
     spec:
       {{- with $service_config.image.pullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
-      - name: {{ $service_name | quote }}
+      - name: {{ $k8s_service_name | quote }}
         {{- if $service_config.image.registry }}
         image: {{ printf "%s/%s:%s" $service_config.image.registry $service_config.image.repository $service_config.image.tag | quote }}
         {{- else }}
@@ -49,6 +50,7 @@ spec:
         {{- end }}
         imagePullPolicy: {{ $service_config.image.pullPolicy }}
         args:
+        - <% printf "-secrets-dir=%s" $.secrets_mount_path | quote %>
         - "-grpc-address=0.0.0.0:50051"
         <%- if $service.enable_grpc_gateway %>
         - "-http-address=0.0.0.0:8090"
@@ -82,21 +84,43 @@ spec:
             - ALL
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+        volumeMounts:
+        - name: {{ printf "%s-secrets" $k8s_service_name | quote }}
+          mountPath: <% $.secrets_mount_path | quote %>
+          readOnly: true
       securityContext:
         fsGroup: 1000
         runAsGroup: 1000
         runAsUser: 1000
+      volumes:
+      - name: {{ printf "%s-secrets" $k8s_service_name | quote }}
+        secret:
+          secretName: {{ printf "%s-secrets" $k8s_service_name | quote }}
+          optional: false
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ printf "%s-secrets" $k8s_service_name | quote }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "chart.labels" (merge (dict "Name" ($k8s_service_name | quote)) $) | nindent 4 }}
+type: Opaque
+data:
+  <%- range $secret := $service.secrets.unparsed %>
+  <% $secret | quote %>: {{ required "the secret <% $secret | squote %> must be set for the service <% $service_name | squote %>" $service_config.secrets.<% $secret %> | b64enc | quote }}
+  <%- end %>
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $service_name | quote }}
+  name: {{ $k8s_service_name | quote }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "chart.labels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+    {{- include "chart.labels" (merge (dict "Name" ($k8s_service_name | quote)) $) | nindent 4 }}
 spec:
   selector:
-    {{- include "chart.selectorLabels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+    {{- include "chart.selectorLabels" (merge (dict "Name" ($k8s_service_name | quote)) $) | nindent 4 }}
   clusterIP: None
   ports:
   - name: grpc
@@ -114,13 +138,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ printf "%s-public" $service_name | quote }}
+  name: {{ printf "%s-public" $k8s_service_name | quote }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "chart.labels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+    {{- include "chart.labels" (merge (dict "Name" ($k8s_service_name | quote)) $) | nindent 4 }}
 spec:
   selector:
-    {{- include "chart.selectorLabels" (merge (dict "Name" ($service_name | quote)) $) | nindent 4 }}
+    {{- include "chart.selectorLabels" (merge (dict "Name" ($k8s_service_name | quote)) $) | nindent 4 }}
   type: LoadBalancer
   {{- if $service_config.public.clusterIP }}
   clusterIP: {{ $service_config.public.clusterIP | quote }}
@@ -142,4 +166,5 @@ spec:
 {{- end }}
 {{- end }}
 {{- end }}
+<%- end %>
 <%- end %>

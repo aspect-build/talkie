@@ -24,7 +24,7 @@ talkie_services:
   <%- /* TODO(f0rmiga): add tolerations. */%>
   <%- /* TODO(f0rmiga): add possibility of node selector. */%>
   <%- range $service := .services %>
-  <% $service.service_name | kebabcase %>:
+  <% $service.service_name | snakecase %>:
     image:
       pullPolicy: IfNotPresent
       pullSecrets: []
@@ -47,6 +47,8 @@ talkie_services:
       loadBalancerIP: ~
     # How many pod replicas this Talkie Service should have.
     replicas: 3
+    # These are the secrets required by the service.
+    secrets: <% $service.secrets.parsed | toYaml | nindent 6 %>
     # By default, a k8s ServiceAccount is created for each Talkie Service. If 'serviceAccountName' is
     # set, then it will be used instead and no ServiceAccount will be created automatically.
     # TODO(f0rmiga): create a service account by default and implement this logic.

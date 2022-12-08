@@ -18,8 +18,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/aspect-build/talkie/service"
+	"github.com/aspect-build/talkie/service/secrets"
 
 	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
 )
@@ -33,6 +35,11 @@ type Greeter struct {
 // method, as service.Talkie provides an empty implementation of this.
 func (s *Greeter) BeforeStart() error {
 	s.Log.Infof("called BeforeStart")
+	redisURL, err := secrets.Get("redis.url")
+	if err != nil {
+		return fmt.Errorf("failed to initialize Greeter: %w", err)
+	}
+	s.Log.Infof(redisURL)
 	return nil
 }
 

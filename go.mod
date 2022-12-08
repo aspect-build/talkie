@@ -13,6 +13,7 @@ require (
 	google.golang.org/grpc v1.51.0
 	helm.sh/helm/v3 v3.10.2
 	sigs.k8s.io/kind v0.17.0
+	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
@@ -156,5 +157,4 @@ require (
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )

@@ -5,6 +5,7 @@ load("@bazel_gazelle//:def.bzl", "gazelle")
 # gazelle:exclude talkie
 # gazelle:prefix github.com/aspect-build/talkie/examples
 # gazelle:resolve go github.com/aspect-build/talkie/service @aspect_talkie//service
+# gazelle:resolve go github.com/aspect-build/talkie/service/secrets @aspect_talkie//service/secrets
 gazelle(name = "gazelle")
 
 gazelle(

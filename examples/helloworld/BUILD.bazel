@@ -3,6 +3,9 @@ load("@aspect_talkie//:defs.bzl", "talkie_service")
 talkie_service(
     name = "helloworld",
     base_image = "@distroless_base_debian11//image",
+    # This becomes a required value to be set in the Helm chart. The user-provided secret will be
+    # accessible at runtime using the github.com/aspect-build/talkie/service/secrets package.
+    secrets = ["redis.url"],
     service_definition = "//helloworld/protos",
     service_implementation = "//helloworld/service",
     visibility = ["//visibility:public"],
