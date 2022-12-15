@@ -1943,6 +1943,6 @@ def go_dependencies():
         name = "sh_helm_helm_v3",
         build_file_proto_mode = "disable_global",
         importpath = "helm.sh/helm/v3",
-        sum = "h1:2PmN9NgmqTn5pswfL5Kh2LxOKjkmh0hxKLe6/J0yUY4=",
-        version = "v3.10.2",
+        sum = "h1:wL7IUZ7Zyukm5Kz0OUmIFZgKHuAgByCrUcJBtY0kDyw=",
+        version = "v3.10.3",
     )

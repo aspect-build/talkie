@@ -11,7 +11,7 @@ require (
 	github.com/imdario/mergo v0.3.13
 	github.com/sirupsen/logrus v1.9.0
 	google.golang.org/grpc v1.51.0
-	helm.sh/helm/v3 v3.10.2
+	helm.sh/helm/v3 v3.10.3
 	sigs.k8s.io/kind v0.17.0
 	sigs.k8s.io/yaml v1.3.0
 )
