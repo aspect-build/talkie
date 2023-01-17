@@ -13,20 +13,14 @@ def talkie_dependencies():
         http_archive,
         name = "bazel_skylib",
         sha256 = "74d544d96f4a5bb630d465ca8bbcfe231e3594e5aae57e1edbf17a6eb3ca2506",
-        urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
-            "https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz",
-        ],
+        urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/1.3.0/bazel-skylib-1.3.0.tar.gz"],
     )
     maybe(
         http_archive,
         name = "com_google_protobuf",
         sha256 = "990e47a163b4057f98b899eca591981b5b735872b58f59b9ead9cecabbb21a2a",
         strip_prefix = "protobuf-21.4",
-        urls = [
-            "https://mirror.bazel.build/github.com/protocolbuffers/protobuf/archive/v21.4.tar.gz",
-            "https://github.com/protocolbuffers/protobuf/archive/v21.4.tar.gz",
-        ],
+        urls = ["https://github.com/protocolbuffers/protobuf/archive/v21.4.tar.gz"],
     )
     maybe(
         http_archive,
@@ -49,10 +43,7 @@ def talkie_dependencies():
         http_archive,
         name = "rules_pkg",
         sha256 = "eea0f59c28a9241156a47d7a8e32db9122f3d50b505fae0f33de6ce4d9b61834",
-        urls = [
-            "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.8.0/rules_pkg-0.8.0.tar.gz",
-            "https://github.com/bazelbuild/rules_pkg/releases/download/0.8.0/rules_pkg-0.8.0.tar.gz",
-        ],
+        urls = ["https://github.com/bazelbuild/rules_pkg/releases/download/0.8.0/rules_pkg-0.8.0.tar.gz"],
     )
     maybe(
         http_archive,
