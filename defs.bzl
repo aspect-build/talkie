@@ -17,7 +17,7 @@
 """
 
 load("@aspect_bazel_lib//lib:transitions.bzl", "platform_transition_filegroup")
-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_file")
 load("@bazel_gomock//:gomock.bzl", "gomock")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@io_bazel_rules_docker//container:bundle.bzl", "container_bundle")
@@ -496,9 +496,10 @@ def talkie_client(name, service, **kwargs):
         **kwargs
     )
 
-    write_source_files(
+    write_source_file(
         name = "write_" + name,
-        files = {"client.go": name},
+        in_file = name,
+        out_file = "client.go",
         visibility = ["//visibility:private"],
     )
 
@@ -528,9 +529,10 @@ def talkie_client_mock(name, service_definition, interfaces):
         visibility = ["//visibility:private"],
     )
 
-    write_source_files(
+    write_source_file(
         name = "write_mock_" + name,
-        files = {"mock_{}.go".format(name): "mock_" + name},
+        in_file = "mock_" + name,
+        out_file = "mock_{}.go".format(name),
         visibility = ["//visibility:private"],
     )
 
