@@ -23,7 +23,7 @@ import "google/api/annotations.proto";
 option go_package = "github.com/aspect-build/talkie/examples/helloworld_http/protos";
 
 service Greeter {
-  rpc SayHello (HelloRequest) returns (HelloReply) {
+  rpc SayHello(HelloRequest) returns (HelloReply) {
     option (google.api.http) = {
       post: "/v1/example/say_hello"
       body: "*"
