@@ -14,14 +14,20 @@ gazelle(
         "-prune",
     ],
     command = "update-repos",
+    visibility = ["//:__subpackages__"],
 )
 
 sh_binary(
-    name = "tidy",
-    srcs = ["tidy.sh"],
-)
-
-alias(
-    name = "go",
-    actual = "@go_sdk//:bin/go",
+    name = "gazelle.ci",
+    srcs = ["gazelle_ci.sh"],
+    data = [
+        ":gazelle",
+        ":gazelle_update_repos",
+        "@go_sdk//:bin/go",
+    ],
+    env = {
+        "GO": "$(rootpath @go_sdk//:bin/go)",
+        "GAZELLE": "$(rootpath :gazelle)",
+        "GAZELLE_UPDATE_REPOS": "$(rootpath :gazelle_update_repos)",
+    },
 )
