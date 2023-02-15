@@ -22,12 +22,10 @@ sh_binary(
     srcs = ["gazelle_ci.sh"],
     data = [
         ":gazelle",
-        ":gazelle_update_repos",
         "@go_sdk//:bin/go",
     ],
     env = {
         "GO": "$(rootpath @go_sdk//:bin/go)",
         "GAZELLE": "$(rootpath :gazelle)",
-        "GAZELLE_UPDATE_REPOS": "$(rootpath :gazelle_update_repos)",
     },
 )
