@@ -21,10 +21,12 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/resolver"
 
 	pb "github.com/aspect-build/talkie/examples/helloworld/protos"
@@ -55,6 +57,11 @@ type greeter struct {
 var defaultOptions = []grpc.DialOption{
 	// TODO(f0rmiga): do proper mTLS.
 	grpc.WithTransportCredentials(insecure.NewCredentials()),
+	grpc.WithKeepaliveParams(keepalive.ClientParameters{
+		Time:                time.Second * 10,
+		Timeout:             time.Second * 3,
+		PermitWithoutStream: true,
+	}),
 }
 
 // Connect connects to the Greeter service.
