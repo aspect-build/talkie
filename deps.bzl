@@ -24,18 +24,11 @@ def talkie_dependencies():
     )
     maybe(
         http_archive,
-        name = "com_google_protobuf",
-        sha256 = "990e47a163b4057f98b899eca591981b5b735872b58f59b9ead9cecabbb21a2a",
-        strip_prefix = "protobuf-21.4",
-        urls = ["https://github.com/protocolbuffers/protobuf/archive/v21.4.tar.gz"],
-    )
-    maybe(
-        http_archive,
         name = "rules_proto",
-        sha256 = "66bfdf8782796239d3875d37e7de19b1d94301e8972b3cbd2446b332429b4df1",
-        strip_prefix = "rules_proto-4.0.0",
+        sha256 = "dc3fb206a2cb3441b485eb1e423165b231235a1ea9b031b4433cf7bc1fa460dd",
+        strip_prefix = "rules_proto-5.3.0-21.7",
         urls = [
-            "https://github.com/bazelbuild/rules_proto/archive/refs/tags/4.0.0.tar.gz",
+            "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
         ],
     )
     maybe(
