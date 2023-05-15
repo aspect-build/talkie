@@ -12,9 +12,9 @@ def talkie_dependencies():
     maybe(
         http_archive,
         name = "aspect_bazel_lib",
-        sha256 = "087f347a1725b299915f8ab81887c61e1911ed482a56c5d8985a0e190f080326",
-        strip_prefix = "bazel-lib-1.29.1",
-        url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.29.1/bazel-lib-v1.29.1.tar.gz",
+        sha256 = "0da75299c5a52737b2ac39458398b3f256e41a1a6748e5457ceb3a6225269485",
+        strip_prefix = "bazel-lib-1.31.2",
+        url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.31.2/bazel-lib-v1.31.2.tar.gz",
     )
     maybe(
         http_archive,
