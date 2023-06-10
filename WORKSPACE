@@ -120,5 +120,5 @@ http_archive(
     patch_cmds = ["rm System/Library/Frameworks/Ruby.framework/Versions/Current/Headers/ruby/ruby"],
     sha256 = "71ae00a90be7a8c382179014969cec30d50e6e627570af283fbe52132958daaf",
     strip_prefix = "MacOSX11.3.sdk",
-    urls = ["https://aspect-cdn-bucket.s3.us-east-2.amazonaws.com/sysroots/MacOSX11.3.sdk.tar.xz"],
+    urls = ["https://s3.us-east-2.amazonaws.com/static.aspect.build/sysroots/MacOSX11.3.sdk.tar.xz"],
 )
