@@ -28,8 +28,8 @@ import (
 	"strings"
 	"text/template"
 
+	"dario.cat/mergo"
 	sprig "github.com/Masterminds/sprig/v3"
-	"github.com/imdario/mergo"
 	"sigs.k8s.io/yaml"
 )
 

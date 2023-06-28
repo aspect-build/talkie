@@ -7,13 +7,19 @@ def go_dependencies():
     """The Go dependencies.
     """
     go_repository(
+        name = "cat_dario_mergo",
+        build_file_proto_mode = "disable_global",
+        importpath = "dario.cat/mergo",
+        sum = "h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=",
+        version = "v1.0.0",
+    )
+    go_repository(
         name = "com_github_adalogics_go_fuzz_headers",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/AdaLogics/go-fuzz-headers",
         sum = "h1:EKPd1INOIyr5hWOWhvpmQpY6tKjeG0hT1s3AMC/9fic=",
         version = "v0.0.0-20230106234847-43070de90fa1",
     )
-
     go_repository(
         name = "com_github_alessio_shellescape",
         build_file_proto_mode = "disable_global",
@@ -259,7 +265,6 @@ def go_dependencies():
         sum = "h1:s6rrhirfEP/CGIoc6p+PZAeogN2SxKav6Wp7+dyMWVo=",
         version = "v3.0.0",
     )
-
     go_repository(
         name = "com_github_go_logr_logr",
         build_file_proto_mode = "disable_global",
@@ -274,7 +279,6 @@ def go_dependencies():
         sum = "h1:hSWxHoqTgW2S2qGc0LTAI563KZ5YKYRhT3MFKZMbjag=",
         version = "v1.2.2",
     )
-
     go_repository(
         name = "com_github_go_openapi_jsonpointer",
         build_file_proto_mode = "disable_global",
@@ -450,7 +454,6 @@ def go_dependencies():
         sum = "h1:H5DkEtf6CXdFp0N0Em5UCwQpXMWke8IA0+lD48awMYo=",
         version = "v1.1.1",
     )
-
     go_repository(
         name = "com_github_huandu_xstrings",
         build_file_proto_mode = "disable_global",
@@ -462,8 +465,8 @@ def go_dependencies():
         name = "com_github_imdario_mergo",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/imdario/mergo",
-        sum = "h1:wwQJbIsHYGMUyLSPrEq1CT16AhnhNJQ51+4fdHUnCl4=",
-        version = "v0.3.16",
+        sum = "h1:lFzP57bqS/wsqKssCGmtLAb8A0wKjLGrve2q3PPVcBk=",
+        version = "v0.3.13",
     )
     go_repository(
         name = "com_github_inconshreveable_mousetrap",
@@ -927,7 +930,6 @@ def go_dependencies():
         sum = "h1:B9CdHFZTFjVti89tmyXXrO+7vSNo2jvZuHG8zD5trdQ=",
         version = "v0.6.0",
     )
-
     go_repository(
         name = "com_google_cloud_go_appengine",
         build_file_proto_mode = "disable_global",
@@ -1733,7 +1735,6 @@ def go_dependencies():
         sum = "h1:73M5CoZyi3ZLMOyDlQh031Cx6N9NDJ2Vvfl76EDAgDc=",
         version = "v0.9.1",
     )
-
     go_repository(
         name = "in_gopkg_yaml_v2",
         build_file_proto_mode = "disable_global",
@@ -1882,7 +1883,6 @@ def go_dependencies():
         sum = "h1:wp2Mmvj41tDsyAJXiWDWpfNsOiIyd38fy85pyKcFq/M=",
         version = "v1.14.0",
     )
-
     go_repository(
         name = "land_oras_oras_go",
         build_file_proto_mode = "disable_global",
@@ -1925,7 +1925,6 @@ def go_dependencies():
         sum = "h1:XSJ8Vk1SWuNr8S18z1NZSziL0CPIXLCCMDOEFtHBOFc=",
         version = "v0.0.0-20230530153820-e85fd2cbaebc",
     )
-
     go_repository(
         name = "org_golang_google_grpc",
         build_file_proto_mode = "disable_global",

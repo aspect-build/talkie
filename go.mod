@@ -3,12 +3,12 @@ module github.com/aspect-build/talkie
 go 1.20
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/emicklei/proto v1.11.2
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0
 	github.com/grpc-ecosystem/grpc-health-probe v0.4.19
-	github.com/imdario/mergo v0.3.16
 	github.com/sirupsen/logrus v1.9.3
 	google.golang.org/grpc v1.56.1
 	helm.sh/helm/v3 v3.12.1
@@ -73,6 +73,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
+	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
