@@ -1,5 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@aspect_talkie//:defs.bzl", "talkie_client_mock")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 talkie_client_mock(
     name = "helloworld_http",

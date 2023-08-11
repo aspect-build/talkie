@@ -24,8 +24,8 @@ load("@io_bazel_rules_docker//container:bundle.bzl", "container_bundle")
 load("@io_bazel_rules_docker//container:image.bzl", "container_image")
 load("@io_bazel_rules_go//go:def.bzl", "GoLibrary", "go_binary")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
-load("//generator/renderer:defs.bzl", "render")
 load("//generator/json/bazel_stamp:defs.bzl", "bazel_stamp_to_json")
+load("//generator/renderer:defs.bzl", "render")
 
 DEFAULT_VERSION_WORKSPACE_STATUS_KEY = "STABLE_TALKIE_RELEASE_VERSION"
 SECRETS_MOUNT_PATH = "/var/talkie/secrets"
@@ -154,10 +154,10 @@ def talkie_service(
     native.alias(
         name = image_alias_target,
         actual = select({
-            "@aspect_talkie//platforms/config:macos_aarch64": name + "_image_aarch64",
-            "@aspect_talkie//platforms/config:macos_x86_64": name + "_image_x86_64",
             "@aspect_talkie//platforms/config:linux_aarch64": name + "_image_aarch64",
             "@aspect_talkie//platforms/config:linux_x86_64": name + "_image_x86_64",
+            "@aspect_talkie//platforms/config:macos_aarch64": name + "_image_aarch64",
+            "@aspect_talkie//platforms/config:macos_x86_64": name + "_image_x86_64",
         }),
     )
     image_target = name + "_image"
@@ -189,8 +189,8 @@ def talkie_service(
 ProtosInfo = provider(
     doc = "Forwards the .pb.go files found by the _get_protos.",
     fields = {
-        "stubs": "The .pb.go files.",
         "protos": "The .proto files.",
+        "stubs": "The .pb.go files.",
     },
 )
 
@@ -294,6 +294,18 @@ def _entrypoints_impl(ctx):
 entrypoints = rule(
     _entrypoints_impl,
     attrs = {
+        "client_output": attr.output(
+            doc = "The generated client output .go file.",
+            mandatory = True,
+        ),
+        "enable_grpc_gateway": attr.bool(
+            doc = "If a grpc gateway should be created for this service",
+            mandatory = False,
+        ),
+        "server_output": attr.output(
+            doc = "The generated server output .go file.",
+            mandatory = True,
+        ),
         "service_definition": attr.label(
             aspects = [_get_protos],
             doc = "The go_library for the gRPC service definition.",
@@ -311,18 +323,6 @@ entrypoints = rule(
             doc = "A list of Talkie client targets this service is allowed to communicate.",
             mandatory = True,
             providers = [GoLibrary],
-        ),
-        "client_output": attr.output(
-            doc = "The generated client output .go file.",
-            mandatory = True,
-        ),
-        "server_output": attr.output(
-            doc = "The generated server output .go file.",
-            mandatory = True,
-        ),
-        "enable_grpc_gateway": attr.bool(
-            doc = "If a grpc gateway should be created for this service",
-            mandatory = False,
         ),
         "_client_template": attr.label(
             allow_single_file = True,
@@ -462,10 +462,6 @@ _talkie_service = rule(
             doc = "The image name.",
             mandatory = False,
         ),
-        "version_workspace_status_key": attr.string(
-            doc = "The key used to extract the release version from the Bazel workspace status.",
-            mandatory = True,
-        ),
         "secrets": attr.string_list(
             default = [],
             doc = "A list of secrets. E.g. 'redis.username' and 'redis.password' would become" +
@@ -483,6 +479,10 @@ _talkie_service = rule(
             doc = "A list of Talkie client targets this service is allowed to communicate.",
             mandatory = True,
             providers = [GoLibrary],
+        ),
+        "version_workspace_status_key": attr.string(
+            doc = "The key used to extract the release version from the Bazel workspace status.",
+            mandatory = True,
         ),
     },
     doc = "The Talkie service. The DefaultInfo forwards the server but it also returns the TalkieServiceInfo, used extensively by talkie_deployment.",
@@ -653,14 +653,14 @@ _DEPLOYMENT_ATTRS = {
         mandatory = True,
         providers = [TalkieServiceInfo],
     ),
-    "_renderer": attr.label(
-        cfg = "exec",
-        default = Label("//generator/renderer"),
-        executable = True,
-    ),
     "_bazel_stamp_to_json": attr.label(
         cfg = "exec",
         default = Label("//generator/json/bazel_stamp"),
+        executable = True,
+    ),
+    "_renderer": attr.label(
+        cfg = "exec",
+        default = Label("//generator/renderer"),
         executable = True,
     ),
 }
@@ -676,14 +676,14 @@ _talkie_deployment = rule(
             doc = "The key used to extract the release version from the Bazel workspace status.",
             mandatory = True,
         ),
-        "_helm_chart_templates": attr.label(
-            default = Label("//generator/deployment/helm/chart"),
-            doc = "The Helm chart templates. It's a bit of an inception as there are 2 levels of templates. The final tarball still contains regular Helm templates.",
-        ),
         "_helm": attr.label(
             cfg = "exec",
             default = Label("@sh_helm_helm_v3//cmd/helm"),
             executable = True,
+        ),
+        "_helm_chart_templates": attr.label(
+            default = Label("//generator/deployment/helm/chart"),
+            doc = "The Helm chart templates. It's a bit of an inception as there are 2 levels of templates. The final tarball still contains regular Helm templates.",
         ),
     }).items() + _DEPLOYMENT_ATTRS.items()),
 )

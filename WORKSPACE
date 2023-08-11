@@ -27,10 +27,10 @@ llvm_toolchain(
         "linux-x86_64": "clang+llvm-14.0.0-x86_64-linux-gnu",
     },
     sysroot = {
-        "linux-aarch64": "@org_chromium_sysroot_linux_arm64//:sysroot",
-        "linux-x86_64": "@org_chromium_sysroot_linux_x86_64//:sysroot",
         "darwin-aarch64": "@sysroot_darwin_universal//:sysroot",
         "darwin-x86_64": "@sysroot_darwin_universal//:sysroot",
+        "linux-aarch64": "@org_chromium_sysroot_linux_arm64//:sysroot",
+        "linux-x86_64": "@org_chromium_sysroot_linux_x86_64//:sysroot",
     },
     urls = {
         "darwin-aarch64": ["https://github.com/aspect-forks/llvm-project/releases/download/aspect-release-14.0.0/clang+llvm-14.0.0-arm64-apple-darwin.tar.xz"],
@@ -59,8 +59,8 @@ load("//:deps.bzl", "go_dependencies", "talkie_dependencies")
 
 talkie_dependencies()
 
-load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()

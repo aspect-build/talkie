@@ -28,8 +28,8 @@ sh_binary(
         "@go_sdk//:bin/go",
     ],
     env = {
-        "GO": "$(rootpath @go_sdk//:bin/go)",
         "GAZELLE": "$(rootpath :gazelle)",
+        "GO": "$(rootpath @go_sdk//:bin/go)",
     },
 )
 

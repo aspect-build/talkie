@@ -16,9 +16,9 @@
 """This module contains definitions for dealing with stubs in the source tree.
 """
 
-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@aspect_bazel_lib//lib:directory_path.bzl", "make_directory_path")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
 def write_proto_stubs_to_source(name, target, output_files):
     native.filegroup(
