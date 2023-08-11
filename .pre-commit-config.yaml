@@ -54,3 +54,10 @@ repos:
           - hooks/license_header
           - --comment-style
           - //
+      - id: insert-license
+        files: \.(bazel|bzl)$
+        args:
+          # Note: when changing the license_header file, use this to replace existing headers
+          # https://github.com/Lucas-C/pre-commit-hooks#removing-old-license-and-replacing-it-with-a-new-one
+          - --license-filepath
+          - hooks/license_header
