@@ -1,1 +1,1 @@
-../../gazelle_ci.sh
+../gazelle_ci.sh
