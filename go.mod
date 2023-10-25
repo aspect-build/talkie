@@ -10,7 +10,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.0
 	github.com/grpc-ecosystem/grpc-health-probe v0.4.19
 	github.com/sirupsen/logrus v1.9.3
-	google.golang.org/grpc v1.56.2
+	google.golang.org/grpc v1.56.3
 	helm.sh/helm/v3 v3.12.2
 	sigs.k8s.io/kind v0.20.0
 	sigs.k8s.io/yaml v1.3.0
